@@ -1,4 +1,4 @@
-# Makefile for zzcollab research compendium
+# zzcollab Makefile v2.2.0
 # Docker-first workflow for reproducible research
 
 # Auto-detect from project (no manual configuration needed)
