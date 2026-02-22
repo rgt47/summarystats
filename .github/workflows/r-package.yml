@@ -11,21 +11,22 @@ jobs:
   check:
     runs-on: ubuntu-latest
     container: rocker/tidyverse:latest
+    env:
+      ZZCOLLAB_CONTAINER: "true"
+      CI_TOOLS_LIB: "/tmp/ci-tools"
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install jq for validation
+      - name: Install system dependencies
         run: |
-          apt-get update && apt-get install -y jq
+          apt-get update && apt-get install -y jq libcurl4-openssl-dev libssl-dev libxml2-dev
 
-      - name: Validate package dependencies
+      - name: Validate package files exist
         run: |
-          # Check DESCRIPTION and renv.lock exist
           test -f DESCRIPTION || { echo "Missing DESCRIPTION"; exit 1; }
           test -f renv.lock || { echo "Missing renv.lock"; exit 1; }
           echo "Package files validated"
-          # Full validation happens during renv::restore() below
 
       - name: Cache renv packages
         uses: actions/cache@v3
@@ -34,28 +35,41 @@ jobs:
           key: renv-${{ hashFiles('renv.lock') }}
           restore-keys: |
             renv-
-          # Cache speeds up subsequent runs by ~2-3 minutes
 
-      - name: Restore packages from renv.lock
+      - name: Install renv and restore project packages
         run: |
-          Rscript -e "renv::restore()"
-          # Installs exact package versions for reproducible testing
+          Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
+          Rscript -e "renv::restore(prompt = FALSE)"
+
+      - name: Install CI tools to separate library
+        run: |
+          mkdir -p $CI_TOOLS_LIB
+          Rscript -e "install.packages(c('rcmdcheck', 'testthat'),
+                                       lib = Sys.getenv('CI_TOOLS_LIB'),
+                                       repos = 'https://cloud.r-project.org')"
 
       - name: Run R CMD check
         run: |
-          Rscript -e "rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'never')"
-        # Using error_on = 'never' for development flexibility
-        # Change to 'warning' for production/CRAN submission
+          Rscript -e "
+            .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths()))
+            rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error')
+          "
 
       - name: Run tests
         continue-on-error: true
         run: |
-          Rscript -e "testthat::test_dir('tests/testthat')"
-        # Tests may fail in CI environment - won't block workflow
+          Rscript -e "
+            .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths()))
+            if (dir.exists('tests/testthat')) {
+              testthat::test_local()
+            } else {
+              message('No tests/testthat directory found, skipping tests')
+            }
+          "
 
       - name: Validate project structure
         run: |
-          Rscript -e "if (file.exists('DESCRIPTION')) cat('✅ DESCRIPTION found\n')"
-          Rscript -e "if (dir.exists('R')) cat('✅ R/ directory found\n')"
-          Rscript -e "if (file.exists('renv.lock')) cat('✅ renv.lock found\n')"
-          Rscript -e "cat('✅ Project structure validated\n')"
+          echo "✅ DESCRIPTION found"
+          test -d R && echo "✅ R/ directory found" || echo "⚠️  No R/ directory"
+          echo "✅ renv.lock found"
+          echo "✅ Project structure validated"
