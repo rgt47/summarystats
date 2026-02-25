@@ -47,11 +47,14 @@ if (!in_container) {
   # Container R: Full renv workflow
   # ==========================================
 
+  # CI detection (GitHub Actions sets CI=true)
+  in_ci <- nzchar(Sys.getenv("CI"))
+
   # renv Cache Path Configuration
   # If RENV_PATHS_CACHE already set (e.g., via docker -e), use it
-  # Otherwise use project-local cache
+  # Otherwise use ~/.cache/R/renv (shared across projects)
   if (Sys.getenv("RENV_PATHS_CACHE") == "") {
-    Sys.setenv(RENV_PATHS_CACHE = file.path(getwd(), ".cache/R/renv"))
+    Sys.setenv(RENV_PATHS_CACHE = file.path(Sys.getenv("HOME"), ".cache/R/renv"))
   }
 
   # Activate renv (set project-local library paths)
@@ -118,7 +121,7 @@ if (!in_container) {
     # ==========================================
     auto_restore <- Sys.getenv("ZZCOLLAB_AUTO_RESTORE", "true")
 
-    if (tolower(auto_restore) %in% c("true", "t", "1")) {
+    if (tolower(auto_restore) %in% c("true", "t", "1") && !in_ci) {
       in_lsp <- !interactive() || nzchar(Sys.getenv("NVIM_LISTEN_ADDRESS")) ||
                 nzchar(Sys.getenv("RSTUDIO"))
 
@@ -153,7 +156,7 @@ if (!in_container) {
   .Last <- function() {
     auto_snapshot <- Sys.getenv("ZZCOLLAB_AUTO_SNAPSHOT", "true")
 
-    if (tolower(auto_snapshot) %in% c("true", "t", "1")) {
+    if (tolower(auto_snapshot) %in% c("true", "t", "1") && !in_ci) {
       if (file.exists("renv.lock") && file.exists("renv/activate.R")) {
         message("\n📸 Auto-snapshot: Updating renv.lock...")
 
