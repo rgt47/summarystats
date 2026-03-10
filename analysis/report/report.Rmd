@@ -13,6 +13,7 @@ output:
     highlight: tango
     keep_tex: true
 bibliography: references.bib
+link-citations: true
 ---
 
 ```{r setup, include=FALSE}
