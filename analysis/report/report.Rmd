@@ -4,7 +4,7 @@ title: "Summary statistics for treatment efficacy estimation
 author: "R.G. Thomas"
 date: "`r Sys.Date()`"
 fontsize: 11pt
-geometry: "left=3cm,right=3cm,top=2cm,bottom=2cm"
+geometry: "left=3cm,right=5cm,top=2cm,bottom=2cm"
 output:
   pdf_document:
     latex_engine: xelatex
