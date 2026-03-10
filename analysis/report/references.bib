@@ -1,60 +1,39 @@
-@article{baghfalakiBayesianSampleSize2019,
-  title = {Bayesian Sample Size Determination for Longitudinal Studies with Continuous Response Based on Different Scientific Questions of Interest},
-  author = {Baghfalaki, Taban},
-  year = {2019},
-  month = mar,
-  journal = {Journal of Biopharmaceutical Statistics},
-  volume = {29},
-  number = {2},
-  pages = {244--270},
-  publisher = {{Taylor \& Francis}},
-  issn = {1054-3406},
-  doi = {10.1080/10543406.2018.1535501},
-  urldate = {2023-08-12},
-  abstract = {Longitudinal study designs are commonly applied in much scientific research, especially in the medical, social, and economic sciences. Longitudinal studies allow researchers to measure changes in each individual's responses over time and often have higher statistical power than cross-sectional studies. Choosing an appropriate sample size is a crucial step in a successful study. In longitudinal studies, because of the complexity of their design, including the selection of the number of individuals and the number of repeated measurements, sample size determination is less studied. This paper uses a simulation-based method to determine the sample size from a Bayesian perspective. For this purpose, several Bayesian criteria for sample size determination are used, of which the most important one is the Bayesian power criterion. We determine the sample size of a longitudinal study based on the scientific question of interest, by the choice of an appropriate model. Most of the methods of determining sample size are based on the definition of a single hypothesis. In this paper, in addition to using this method, we determine the sample size using multiple hypotheses. Using several examples, the proposed Bayesian methods are illustrated and discussed.},
-  pmid = {30359549},
-  keywords = {Bayesian analysis,Bayesian power criterion,longitudinal data,marginal model,random effects model,transition model},
-  file = {/Users/zenn/Zotero/storage/CD6CL8L5/Baghfalaki - 2019 - Bayesian sample size determination for longitudina.pdf}
+% ============================================================
+% Core/foundational papers -- summary measures approach
+% ============================================================
+
+@article{matthewsAnalysisSerialMeasurements1990,
+  title = {Analysis of Serial Measurements in Medical Research},
+  author = {Matthews, J. N. S. and Altman, D. G. and Campbell, M. J.
+            and Royston, P.},
+  year = {1990},
+  month = jan,
+  journal = {BMJ},
+  volume = {300},
+  number = {6719},
+  pages = {230--235},
+  doi = {10.1136/bmj.300.6719.230},
+  pmid = {2106931}
 }
 
-@article{dawsonSampleSizeCalculations1998,
-  title = {Sample {{Size Calculations Based}} on {{Slopes}} and {{Other Summary Statistics}}},
-  author = {Dawson, Jeffrey D.},
-  year = {1998},
-  journal = {Biometrics},
-  volume = {54},
-  number = {1},
-  eprint = {2534019},
-  eprinttype = {jstor},
-  pages = {323--330},
-  publisher = {{[Wiley, International Biometric Society]}},
-  issn = {0006-341X},
-  doi = {10.2307/2534019},
-  urldate = {2023-08-12},
-  abstract = {Sample size calculations based on two-sample comparisons of slopes have been reported by many. This paper extends such discussions to include summary statistics other than slopes, such as post-baseline means, change scores, and final observations. Specifically, sample size formulas for analyses based on a broad class of summary statistics are presented, with modifications proposed to allow for missing data caused by staggered entry and random dropouts. The formulas developed are used to illustrate how required sample size is affected by summary statistic choice, variance parameters, the type of treatment difference of interest, and the manner in which incomplete observations are used in the analysis. An example based on longitudinal data from the Muscatine Study is presented.},
-  file = {/Users/zenn/Zotero/storage/RTT9H7EL/Dawson - 1998 - Sample Size Calculations Based on Slopes and Other.pdf}
-}
-
-@article{dawsonStratificationSummaryStatistic1994,
-  title = {Stratification of Summary Statistic Tests According to Missing Data Patterns},
-  author = {Dawson, Jeffrey D.},
-  year = {1994},
+@article{frisonRepeatedMeasuresClinical1992,
+  title = {Repeated Measures in Clinical Trials: Analysis Using Mean
+           Summary Statistics and Its Implications for Design},
+  author = {Frison, Lars and Pocock, Stuart J.},
+  year = {1992},
+  month = sep,
   journal = {Statistics in Medicine},
-  volume = {13},
-  number = {18},
-  pages = {1853--1863},
-  issn = {1097-0258},
-  doi = {10.1002/sim.4780131807},
-  urldate = {2023-08-12},
-  abstract = {Summary statistics, such as slope or area under the time-response curve, reduce the dimensionality of repeated measures data and can thereby simplify the comparison of groups in longitudinal studies. Since summary statistic distributions vary according to the amount, timing, and type of any missingness that occurs, one must choose between analysing the data unconditionally or conditionally on the missingness patterns. This paper uses simulations to compare such unstratified and stratified summary statistic analyses with respect to their size and power under models that allow for both non-informative and informative missingness mechanisms. Of particular interest is the robustness of these methods to violations of the assumptions that one must make if they are to have proper test size. It is found that stratification of the analysis tends to result in an increase of power, and improves the robustness to violations of missing data assumptions.},
-  copyright = {Copyright \textcopyright{} 1994 John Wiley \& Sons, Ltd.},
-  langid = {english},
-  file = {/Users/zenn/Zotero/storage/DEMVS3BL/sim.html}
+  volume = {11},
+  number = {13},
+  pages = {1685--1704},
+  doi = {10.1002/sim.4780111304},
+  pmid = {1485053}
 }
 
 @article{frisonLinearlyDivergentTreatment1997,
-  title = {Linearly Divergent Treatment Effects in Clinical Trials with Repeated Measures: Efficient Analysis Using Summary Statistics},
-  shorttitle = {Linearly Divergent Treatment Effects in Clinical Trials with Repeated Measures},
+  title = {Linearly Divergent Treatment Effects in Clinical Trials
+           with Repeated Measures: Efficient Analysis Using Summary
+           Statistics},
   author = {Frison, Lars J. and Pocock, Stuart J.},
   year = {1997},
   month = dec,
@@ -62,34 +41,207 @@
   volume = {16},
   number = {24},
   pages = {2855--2872},
-  issn = {0277-6715, 1097-0258},
   doi = {10.1002/(SICI)1097-0258(19971230)16:24<2855::AID-SIM749>3.0.CO;2-Y},
-  urldate = {2023-04-14},
-  abstract = {In many randomized clinical trials with repeated measures of a response variable one anticipates a linear divergence over time in the difference between treatments. This paper explores how to make an efficient choice of analysis based on individual patient summary statistics. With the objective of estimating the mean rate of treatment divergence the simplest choice of summary statistic is the regression coefficient of response on time for each subject (SLOPE). The gains in statistical efficiency imposed by adjusting for the observed pre-treatment levels, or even better the estimated intercepts, are clarified. In the process, we develop the optimal linear summary statistic for any repeated measures design with assumed known covariance structure and shape of true mean treatment difference over time. Statistical power considerations are explored and an example from an asthma trial is used to illustrate the main points. 1997 by John Wiley \& Sons, Ltd.},
-  langid = {english}
+  pmid = {9483719}
 }
 
+@article{sennRepeatedMeasuresClinical2000,
+  title = {Repeated Measures in Clinical Trials: Simple Strategies
+           for Analysis Using Summary Measures},
+  author = {Senn, Stephen and Stevens, Lynda and
+            Chaturvedi, Nishi},
+  year = {2000},
+  month = mar,
+  journal = {Statistics in Medicine},
+  volume = {19},
+  number = {6},
+  pages = {861--877},
+  doi = {10.1002/(SICI)1097-0258(20000330)19:6<861::AID-SIM407>3.0.CO;2-F},
+  pmid = {10734289}
+}
+
+% ============================================================
+% Extensions and follow-up work
+% ============================================================
+
+@article{dawsonStratificationSummaryStatistic1994,
+  title = {Stratification of Summary Statistic Tests According to
+           Missing Data Patterns},
+  author = {Dawson, Jeffrey D.},
+  year = {1994},
+  journal = {Statistics in Medicine},
+  volume = {13},
+  number = {18},
+  pages = {1853--1863},
+  doi = {10.1002/sim.4780131807}
+}
+
+@article{dawsonSampleSizeCalculations1998,
+  title = {Sample Size Calculations Based on Slopes and Other
+           Summary Statistics},
+  author = {Dawson, Jeffrey D.},
+  year = {1998},
+  journal = {Biometrics},
+  volume = {54},
+  number = {1},
+  pages = {323--330},
+  doi = {10.2307/2534019}
+}
+
+@article{weinbergEfficiencyComparisonsRank2001,
+  title = {Efficiency Comparisons of Rank and Permutation Tests
+           Based on Summary Statistics Computed from Repeated
+           Measures Data},
+  author = {Weinberg, Janice M. and Lagakos, Stephen W.},
+  year = {2001},
+  month = mar,
+  journal = {Statistics in Medicine},
+  volume = {20},
+  number = {5},
+  pages = {705--731},
+  doi = {10.1002/sim.708},
+  pmid = {11241572}
+}
+
+@article{sennChangeBaselineAnalysis2006,
+  title = {Change from Baseline and Analysis of Covariance
+           Revisited},
+  author = {Senn, Stephen},
+  year = {2006},
+  journal = {Statistics in Medicine},
+  volume = {25},
+  number = {24},
+  pages = {4334--4344},
+  doi = {10.1002/sim.2682},
+  pmid = {16921578}
+}
+
+% ============================================================
+% Performance comparison studies (SMA vs LMM/MMRM)
+% ============================================================
+
+@article{vossoughiSummaryMeasureAnalysis2012,
+  title = {On Summary Measure Analysis of Linear Trend Repeated
+           Measures Data: Performance Comparison with Two
+           Competing Methods},
+  author = {Vossoughi, Mehrdad and Ayatollahi, S. M. T. and
+            Towhidi, Mina and Ketabchi, Farzaneh},
+  year = {2012},
+  month = mar,
+  journal = {BMC Medical Research Methodology},
+  volume = {12},
+  pages = {33},
+  doi = {10.1186/1471-2288-12-33},
+  pmid = {22439982}
+}
+
+@article{ardMixedModelRepeated2011,
+  title = {Mixed Model of Repeated Measures versus Slope Models
+           in {Alzheimer's} Disease Clinical Trials},
+  author = {Ard, M. Colin and Edland, Steven D.},
+  year = {2011},
+  journal = {The Journal of Nutrition, Health \& Aging},
+  volume = {15},
+  number = {6},
+  pages = {437--441},
+  doi = {10.1007/s12603-012-0047-7},
+  pmid = {22499459}
+}
+
+@article{ardSimulationStudyComparing2015,
+  title = {A Simulation Study Comparing Slope Model with
+           Mixed-Model Repeated Measure to Assess Cognitive Data
+           in Clinical Trials of {Alzheimer's} Disease},
+  author = {Ard, M. Colin and Raghavan, Nandini and
+            Edland, Steven D.},
+  year = {2015},
+  journal = {Alzheimer's Research \& Therapy},
+  volume = {7},
+  pages = {1--8},
+  doi = {10.1186/s13195-015-0168-z}
+}
+
+% ============================================================
+% MMRM methodology and limitations
+% ============================================================
+
+@article{mallinckrodtEfficacyDuloxetine2004,
+  title = {The Efficacy of Duloxetine: A Comprehensive Summary of
+           Results from {MMRM} and {LOCF\_ANCOVA} in Eight
+           Clinical Trials},
+  author = {Mallinckrodt, Craig H. and Raskin, Joel and
+            Wohlreich, Madelaine M. and Watkin, John G. and
+            Detke, Michael J.},
+  year = {2004},
+  month = sep,
+  journal = {BMC Psychiatry},
+  volume = {4},
+  pages = {26},
+  doi = {10.1186/1471-244X-4-26},
+  pmid = {15355546}
+}
+
+@article{kenwardSmallSampleInference1997,
+  title = {Small Sample Inference for Fixed Effects from Restricted
+           Maximum Likelihood},
+  author = {Kenward, Michael G. and Roger, James H.},
+  year = {1997},
+  journal = {Biometrics},
+  volume = {53},
+  number = {3},
+  pages = {983--997},
+  doi = {10.2307/2533558},
+  pmid = {9333350}
+}
+
+@article{liuMixedModelsCovariateInteractions2021,
+  title = {Mixed Models for Repeated Measures Should Include
+           Time-by-Covariate Interactions to Assure Power Gains
+           and Robustness against Dropout Bias Relative to
+           Complete-Case {ANCOVA}},
+  author = {Liu, Guowei W. and Pang, Lei},
+  year = {2021},
+  journal = {Pharmaceutical Statistics},
+  doi = {10.1002/pst.2165},
+  pmid = {34674187}
+}
+
+@article{lairdRandomEffectsModels1982,
+  title = {Random-Effects Models for Longitudinal Data},
+  author = {Laird, Nan M. and Ware, James H.},
+  year = {1982},
+  journal = {Biometrics},
+  volume = {38},
+  number = {4},
+  pages = {963--974},
+  doi = {10.2307/2529876},
+  pmid = {7168798}
+}
+
+% ============================================================
+% Missing data
+% ============================================================
+
 @article{heddenComparisonMissingData2008,
-  title = {A Comparison of Missing Data Methods for Hypothesis Tests of the Treatment Effect in Substance Abuse Clinical Trials: A {{Monte-Carlo}} Simulation Study},
-  shorttitle = {A Comparison of Missing Data Methods for Hypothesis Tests of the Treatment Effect in Substance Abuse Clinical Trials},
-  author = {Hedden, Sarra L. and Woolson, Robert F. and Malcolm, Robert J.},
+  title = {A Comparison of Missing Data Methods for Hypothesis
+           Tests of the Treatment Effect in Substance Abuse
+           Clinical Trials: A {Monte-Carlo} Simulation Study},
+  author = {Hedden, Sarra L. and Woolson, Robert F. and
+            Malcolm, Robert J.},
   year = {2008},
   month = jun,
   journal = {Substance Abuse Treatment, Prevention, and Policy},
   volume = {3},
   number = {1},
   pages = {13},
-  issn = {1747-597X},
   doi = {10.1186/1747-597X-3-13},
-  urldate = {2023-08-12},
-  abstract = {Missing data due to attrition are rampant in substance abuse clinical trials. However, missing data are often ignored in the presentation of substance abuse clinical trials. This paper demonstrates missing data methods which may be used for hypothesis testing.},
-  langid = {english},
-  keywords = {Longitudinal Data Analysis,Miss Data Mechanism,Miss Data Pattern,Miss Data Rate,Outpatient Substance Abuse Treatment},
-  file = {/Users/zenn/Zotero/storage/UQX3JQ3Y/Hedden et al. - 2008 - A comparison of missing data methods for hypothesi.pdf}
+  pmid = {18577204}
 }
 
 @article{yiEstimatingSampleSize2002,
-  title = {Estimating Sample Size for Tests on Trends across Repeated Measurements with Missing Data Based on the Interaction Term in a Mixed Model},
+  title = {Estimating Sample Size for Tests on Trends across
+           Repeated Measurements with Missing Data Based on the
+           Interaction Term in a Mixed Model},
   author = {Yi, Qilong and Panzarella, Tony},
   year = {2002},
   month = oct,
@@ -97,11 +249,50 @@
   volume = {23},
   number = {5},
   pages = {481--496},
-  issn = {0197-2456},
-  doi = {10.1016/S0197-2456(02)00223-4},
-  urldate = {2023-08-12},
-  abstract = {A formula to estimate the required sample size for a study with repeated measurements was constructed based on the test of an interaction term in a mixed model. It covers both random effects and serial correlation and allows for missing data. This formula indicates that the method suggested by Dawson is conservative. A simulation study further verified the accuracy of the formula. Factors that influence the required sample size, such as the number of repeated measurements, the structure of the within-subject correlation, and their interaction, were investigated in detail.},
-  langid = {english},
-  keywords = {Mixed model,Repeated measurements,Sample size},
-  file = {/Users/zenn/Zotero/storage/3M9APIDD/S0197245602002234.html}
+  doi = {10.1016/S0197-2456(02)00223-4}
+}
+
+% ============================================================
+% Sample size and design
+% ============================================================
+
+@article{baghfalakiBayesianSampleSize2019,
+  title = {Bayesian Sample Size Determination for Longitudinal
+           Studies with Continuous Response Based on Different
+           Scientific Questions of Interest},
+  author = {Baghfalaki, Taban},
+  year = {2019},
+  month = mar,
+  journal = {Journal of Biopharmaceutical Statistics},
+  volume = {29},
+  number = {2},
+  pages = {244--270},
+  doi = {10.1080/10543406.2018.1535501},
+  pmid = {30359549}
+}
+
+% ============================================================
+% Regulatory guidance
+% ============================================================
+
+@misc{ichE9R12019,
+  title = {{ICH E9(R1)}: Statistical Principles for Clinical
+           Trials: Addendum on Estimands and Sensitivity Analysis
+           in Clinical Trials},
+  author = {{International Council for Harmonisation}},
+  year = {2019},
+  howpublished = {Step 4 Guideline},
+  url = {https://database.ich.org/sites/default/files/E9-R1_Step4_Guideline_2019_1203.pdf}
+}
+
+% ============================================================
+% Software and tools
+% ============================================================
+
+@manual{mmrmPackage2024,
+  title = {{mmrm}: Mixed Models for Repeated Measures},
+  author = {Sabanés Bové, Daniel and others},
+  year = {2024},
+  note = {R package},
+  url = {https://openpharma.github.io/mmrm/}
 }
