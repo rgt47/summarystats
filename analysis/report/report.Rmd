@@ -425,7 +425,7 @@ results <- purrr::pmap_dfr(
 )
 ```
 
-For each of the `r nrow(design_grid)` design conditions
+For each of the 12 design conditions
 and each of 1,000 replications, we record: the point estimate
 of the treatment effect, its standard error, the p-value, and
 whether the 95\% confidence interval covers the true value.
