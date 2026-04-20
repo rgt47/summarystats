@@ -1,4 +1,4 @@
-<!-- zzcollab ZZCOLLAB_USER_GUIDE.md v2.2.0 -->
+<!-- zzcollab ZZCOLLAB_USER_GUIDE.md v2.4.0 -->
 # ZZCOLLAB User Guide
 
 ## Table of Contents

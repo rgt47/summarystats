@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# zzcollab Dockerfile v2.2.0
+# zzcollab Dockerfile v2.4.0
 #======================================================================
 # ZZCOLLAB Ubuntu X11 Analysis Profile
 #======================================================================
