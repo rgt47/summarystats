@@ -246,32 +246,75 @@ run_one_rep <- function(n_per_arm, p_visits, miss_rate,
 run_simulation <- function(n_per_arm, p_visits, miss_rate,
                            miss_mech, n_reps = 1000,
                            delta = 0.25, ...) {
+  # Morris et al. (2019) §4.1: the RNG seed is set ONCE by the caller;
+  # this function does not call set.seed(). Per-replicate RNG states
+  # are captured and attached to the returned summary for diagnostic
+  # reproducibility of any failing rep.
+  rng_states <- vector("list", n_reps)
+
   reps <- purrr::map_dfr(
     seq_len(n_reps),
-    ~ run_one_rep(
-      n_per_arm = n_per_arm,
-      p_visits = p_visits,
-      miss_rate = miss_rate,
-      miss_mech = miss_mech,
-      delta = delta,
-      ...
-    ),
+    function(i) {
+      rng_states[[i]] <<- .Random.seed
+      run_one_rep(
+        n_per_arm = n_per_arm,
+        p_visits = p_visits,
+        miss_rate = miss_rate,
+        miss_mech = miss_mech,
+        delta = delta,
+        ...
+      )
+    },
     .id = "rep"
   )
 
-  reps |>
+  # Monte Carlo SE formulas per Morris, White & Crowther (2019)
+  # Table 6. Degenerate cases (n_valid < 1 or < 2) yield NA_real_
+  # rather than NaN/Inf.
+  out <- reps |>
     dplyr::group_by(method) |>
     dplyr::summarise(
-      bias = mean(est, na.rm = TRUE) - delta,
-      emp_se = sd(est, na.rm = TRUE),
-      mean_se = mean(se, na.rm = TRUE),
-      power = mean(pval < 0.05, na.rm = TRUE),
-      coverage = mean(
-        ci_lower <= delta & ci_upper >= delta,
-        na.rm = TRUE
-      ),
-      convergence = mean(converged, na.rm = TRUE),
       n_valid = sum(!is.na(est)),
+      bias = if (n_valid >= 1) {
+        mean(est, na.rm = TRUE) - delta
+      } else NA_real_,
+      mcse_bias = if (n_valid >= 1) {
+        stats::sd(est, na.rm = TRUE) / sqrt(n_valid)
+      } else NA_real_,
+      emp_se = if (n_valid >= 2) {
+        stats::sd(est, na.rm = TRUE)
+      } else NA_real_,
+      mcse_emp_se = if (n_valid >= 2) {
+        emp_se / sqrt(2 * (n_valid - 1))
+      } else NA_real_,
+      mse = if (n_valid >= 1) {
+        mean((est - delta)^2, na.rm = TRUE)
+      } else NA_real_,
+      mcse_mse = if (n_valid >= 1) {
+        sqrt(
+          stats::var((est - delta)^2, na.rm = TRUE) / n_valid
+        )
+      } else NA_real_,
+      mean_se = if (n_valid >= 1) {
+        mean(se, na.rm = TRUE)
+      } else NA_real_,
+      mcse_mean_se = if (n_valid >= 1) {
+        stats::sd(se, na.rm = TRUE) / sqrt(n_valid)
+      } else NA_real_,
+      power = if (n_valid >= 1) {
+        mean(pval < 0.05, na.rm = TRUE)
+      } else NA_real_,
+      mcse_power = if (n_valid >= 1) {
+        sqrt(power * (1 - power) / n_valid)
+      } else NA_real_,
+      coverage = if (n_valid >= 1) {
+        mean(ci_lower <= delta & ci_upper >= delta,
+             na.rm = TRUE)
+      } else NA_real_,
+      mcse_coverage = if (n_valid >= 1) {
+        sqrt(coverage * (1 - coverage) / n_valid)
+      } else NA_real_,
+      convergence = mean(converged, na.rm = TRUE),
       .groups = "drop"
     ) |>
     dplyr::mutate(
@@ -280,4 +323,7 @@ run_simulation <- function(n_per_arm, p_visits, miss_rate,
       miss_rate = miss_rate,
       miss_mech = miss_mech
     )
+
+  attr(out, "rng_states") <- rng_states
+  out
 }

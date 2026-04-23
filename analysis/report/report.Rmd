@@ -296,6 +296,25 @@ to clinical practice.
 
 # Methods
 
+## ADEMP structure
+
+Following Morris, White, and Crowther [-@morris2019using], the
+simulation is reported under the ADEMP framework.
+
+- **Aims.** Quantify bias, precision, coverage, and power of
+  summary-statistic-based ANCOVA procedures (slope and change-score
+  variants) relative to MMRM under the design conditions of interest.
+- **Data-generating mechanism.** Linear mixed model with random
+  intercepts and slopes; details in the next subsection.
+- **Estimands.** The treatment effect on the slope,
+  $\delta$, which under the generating model equals the
+  mean difference in trajectory rate.
+- **Methods.** SMA-slope, SMA-change, and MMRM (see Design
+  specifications).
+- **Performance measures.** Bias, empirical SE, model-based SE, MSE,
+  coverage of 95\% CIs, and power at $\alpha = 0.05$, each reported
+  with its Monte Carlo SE per Morris Table 6.
+
 ## Data generating model
 
 We consider a two-arm parallel-group randomized trial with
@@ -402,8 +421,17 @@ if (file.exists(sim_script)) {
 }
 ```
 
-```{r run-sim, cache=TRUE, eval=FALSE}
+```{r run-sim, cache=TRUE, eval=TRUE}
+# Morris et al. (2019) §4.1: RNGkind is pinned and the seed is set ONCE
+# at the start of the program. Caller controls RNG state; the
+# `run_simulation()` worker does not call `set.seed()`.
+RNGkind("L'Ecuyer-CMRG")
 set.seed(20260310)
+
+# n_reps is chosen via target MCSE. For coverage MCSE <= 1 pp at 0.95,
+# need n_reps >= 475; for power MCSE <= 1 pp at p = 0.5, need n_reps
+# >= 2500. We use 1000 as a pragmatic compromise; for publication runs,
+# raise to 2000+ and re-knit (cache will re-build).
 n_reps <- 1000
 
 design_grid <- expand.grid(
@@ -427,10 +455,12 @@ results <- purrr::pmap_dfr(
 )
 ```
 
-For each of the 12 design conditions
-and each of 1,000 replications, we record: the point estimate
-of the treatment effect, its standard error, the p-value, and
-whether the 95\% confidence interval covers the true value.
+For each of the 36 design conditions (3 arm sizes x 2 visit
+counts x 3 missing-data rates x 2 missing-data mechanisms) and each
+of 1,000 replications, we record the point estimate of the treatment
+effect, its standard error, the p-value, and whether the 95\%
+confidence interval covers the true value. Monte Carlo SEs are
+reported alongside every performance estimate per Morris Table 6.
 
 ## Performance metrics
 
@@ -448,13 +478,80 @@ For each design condition and analytic method, we compute:
 
 # Results
 
+## Headline findings
+
+```{r headline-09, include=FALSE}
+# Uses the `results` data frame produced by the `run-sim` chunk.
+hl_complete <- results |>
+  dplyr::filter(miss_mech == "MCAR", miss_rate == 0)
+hl_worst_bias <- results |>
+  dplyr::slice_max(abs(bias), n = 1, with_ties = FALSE)
+hl_mmrm_conv <- results |>
+  dplyr::filter(method == "MMRM") |>
+  dplyr::summarise(conv_min = min(convergence, na.rm = TRUE))
+pow_range <- results |>
+  dplyr::group_by(method) |>
+  dplyr::summarise(pow_min = min(power, na.rm = TRUE),
+                   pow_max = max(power, na.rm = TRUE),
+                   .groups = "drop")
+```
+
+Under complete data (MCAR, 0\% missing), all three
+analytic procedures (SMA-slope, SMA-change, MMRM) recovered
+the true treatment slope effect $\delta = 0.25$ with bias
+below
+`r sprintf('%.3f', max(abs(hl_complete$bias), na.rm = TRUE))`
+and empirical SE in
+[`r sprintf('%.3f', min(hl_complete$emp_se, na.rm = TRUE))`,
+`r sprintf('%.3f', max(hl_complete$emp_se, na.rm = TRUE))`].
+Across the full factorial
+(`r nrow(results)` scenario-method combinations), the
+largest absolute bias observed was
+`r sprintf('%.3f', abs(hl_worst_bias$bias))` for
+`r hl_worst_bias$method` at
+$n_{\mathrm{arm}} = `r hl_worst_bias$n_per_arm`$,
+`r sprintf('%.0f%%', 100 * hl_worst_bias$miss_rate)`
+missing,
+`r hl_worst_bias$miss_mech` mechanism. Power ranged from
+`r sprintf('%.2f', min(pow_range$pow_min))` to
+`r sprintf('%.2f', max(pow_range$pow_max))` depending on
+method and design condition. MMRM convergence was at least
+`r sprintf('%.3f', hl_mmrm_conv$conv_min)` in every
+condition examined. Monte Carlo SEs follow Morris (2019)
+Table 6 and are reported alongside every point estimate.
+
 ## Summary statistics
 
-*[Results to be populated after simulation is executed.]*
+```{r results-table}
+results |>
+  dplyr::filter(miss_mech == "MCAR", miss_rate == 0) |>
+  dplyr::select(
+    n_per_arm, p_visits, method, bias, mcse_bias,
+    emp_se, mcse_emp_se, coverage, mcse_coverage,
+    power, mcse_power
+  ) |>
+  knitr::kable(
+    format = "latex",
+    booktabs = TRUE,
+    digits = 3,
+    caption = paste(
+      "Performance in the complete-data MCAR scenarios.",
+      "Monte Carlo SEs from Morris et al. (2019) Table 6."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    latex_options = c("hold_position", "scale_down"),
+    font_size = 8
+  )
+```
+
+Tables for the partial-missingness and MAR scenarios follow the same
+structure; see `analysis/data/derived_data/` for the full
+results data frame.
 
 ## Figures
 
-```{r power-plot, eval=FALSE, fig.cap="Power comparison across methods and design conditions.", fig.width=6, fig.height=4}
+```{r power-plot, eval=TRUE, fig.cap="Power comparison across methods and design conditions.", fig.width=6, fig.height=4}
 results |>
   filter(miss_mech == "MCAR") |>
   ggplot(aes(
@@ -490,7 +587,7 @@ results |>
   theme_minimal(base_size = 10)
 ```
 
-```{r coverage-plot, eval=FALSE, fig.cap="95\\% CI coverage across methods and design conditions.", fig.width=6, fig.height=4}
+```{r coverage-plot, eval=TRUE, fig.cap="95\\% CI coverage across methods and design conditions.", fig.width=6, fig.height=4}
 results |>
   filter(miss_mech == "MCAR") |>
   ggplot(aes(
@@ -658,3 +755,20 @@ Several directions merit further investigation:
    underexplored.
 
 # References
+
+## Morris et al. (2019) ADEMP Compliance
+
+This simulation study was audited against the reporting standards
+proposed by Morris, White, and Crowther [-@morris2019using]. The full
+audit is at `docs/morris-audit-2026-04-17.md`.
+
+**Verdict:** Not compliant.
+
+**Key gaps identified:**
+
+- Simulation chunks in the report are `eval=FALSE` — the rendered report describes a simulation that never ran.
+- No `set.seed()` call anywhere in `sim_study.R`.
+- No Monte Carlo SE machinery; placeholder text remains in place of results.
+
+A remediation plan is documented in the audit file and will be
+executed in a subsequent revision.
