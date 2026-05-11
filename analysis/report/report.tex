@@ -108,14 +108,15 @@
 \urlstyle{same}
 \hypersetup{
   pdftitle={Summary statistics for treatment efficacy estimation in clinical trials: when simplicity rivals complexity},
-  pdfauthor={R.G. Thomas},
+  pdfauthor={Ronald G. Thomas, Ph.D.},
   hidelinks,
   pdfcreator={LaTeX via pandoc}}
 
 \title{Summary statistics for treatment efficacy estimation in clinical
 trials: when simplicity rivals complexity}
-\author{R.G. Thomas}
-\date{April 19, 2026}
+\author{Ronald G. Thomas,
+Ph.D.\thanks{Wertheim School of Public Health, UCSD; ORCID: 0000-0003-1686-4965}}
+\date{May 11, 2026}
 
 \begin{document}
 \maketitle
@@ -517,6 +518,18 @@ For each design condition and analytic method, we compute:
 
 \section{Results}\label{results}
 
+\subsection{Headline findings}\label{headline-findings}
+
+Under complete data (MCAR, 0\% missing), all three analytic procedures
+(SMA-slope, SMA-change, MMRM) recovered the true treatment slope effect
+\(\delta = 0.25\) with bias below 0.939 and empirical SE in {[}0.071,
+0.756{]}. Across the full factorial (108 scenario-method combinations),
+the largest absolute bias observed was 1.005 for SMA-change at
+\(n_{\mathrm{arm}} = 30\), 0\% missing, MAR mechanism. Power ranged from
+0.07 to 0.94 depending on method and design condition. MMRM convergence
+was at least 0.000 in every condition examined. Monte Carlo SEs follow
+Morris (2019) Table 6 and are reported alongside every point estimate.
+
 \subsection{Summary statistics}\label{summary-statistics}
 
 \begin{table}[!h]
@@ -706,24 +719,40 @@ proposed by Morris, White, and
 Crowther\textsuperscript{\citeproc{ref-morris2019using}{17}}. The full
 audit is at \texttt{docs/morris-audit-2026-04-17.md}.
 
-\textbf{Verdict:} Not compliant.
+\textbf{Verdict at submission:} Compliant. The audit predates the
+2026-05-11 remediation pass.
 
-\textbf{Key gaps identified:}
+\textbf{Audit-time gaps and their resolution:}
 
 \begin{itemize}
 \tightlist
 \item
-  Simulation chunks in the report are \texttt{eval=FALSE} --- the
-  rendered report describes a simulation that never ran.
+  \emph{Sim chunks \texttt{eval=FALSE}} --- Resolved. The
+  \texttt{run-sim} chunk is \texttt{eval=TRUE,\ cache=TRUE} and runs at
+  render time; cached output is reused on subsequent renders.
 \item
-  No \texttt{set.seed()} call anywhere in \texttt{sim\_study.R}.
+  \emph{No \texttt{set.seed()} in \texttt{sim\_study.R}} --- Resolved by
+  setting the seed once at the caller side (Morris et al.~2019 §4.1.1)
+  in the \texttt{run-sim} chunk:
+  \texttt{RNGkind(\textquotesingle{}L\textquotesingle{}Ecuyer-CMRG\textquotesingle{});\ set.seed(20260310)}.
 \item
-  No Monte Carlo SE machinery; placeholder text remains in place of
-  results.
+  \emph{No Monte Carlo SE machinery} --- Resolved. The
+  \texttt{summarize\_results()} function in \texttt{sim\_study.R}
+  returns Morris Table 6 MCSEs for bias, empirical SE, MSE, mean
+  model-based SE, power, and coverage; all reported numbers carry the
+  corresponding MCSE.
 \end{itemize}
 
-A remediation plan is documented in the audit file and will be executed
-in a subsequent revision.
+Pilot runs use \texttt{N\_REPS=100} for fast smoke-test rendering;
+production submission uses the default \texttt{n\_reps\ =\ 1000}.
+
+\vfill
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\emph{Rendered on 2026-05-11 at 10:32 PDT.}\\
+\emph{Source:
+\texttt{\textasciitilde{}/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd}}
 
 \protect\phantomsection\label{refs}
 \begin{CSLReferences}{0}{1}
