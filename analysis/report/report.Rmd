@@ -1,7 +1,7 @@
 ---
 title: "Summary statistics for treatment efficacy estimation
   in clinical trials: when simplicity rivals complexity"
-author: "Ronald G. Thomas, Ph.D."
+author: "Ronald G. Thomas, Ph.D.\\thanks{Wertheim School of Public Health, UCSD; ORCID: 0000-0003-1686-4965}"
 date: "`r format(Sys.Date(), '%B %d, %Y')`"
 fontsize: 11pt
 geometry: "left=3cm,right=5cm,top=2cm,bottom=2cm"
@@ -772,3 +772,14 @@ audit is at `docs/morris-audit-2026-04-17.md`.
 
 A remediation plan is documented in the audit file and will be
 executed in a subsequent revision.
+
+
+```{r footer, echo=FALSE, results='asis'}
+src <- sub("^/Users/zenn/Dropbox/prj/", "~/prj/",
+           knitr::current_input(dir = TRUE))
+cat(sprintf(
+  "\n\\vfill\n\n---\n\n*Rendered on %s.*  \n*Source: `%s`*\n",
+  format(Sys.time(), "%Y-%m-%d at %H:%M %Z"),
+  src
+))
+```
