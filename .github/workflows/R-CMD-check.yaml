@@ -1,0 +1,55 @@
+# zzcollab manuscript-package R CMD check
+#
+# Runs R CMD check + tinytest suite in a rocker/verse container,
+# triggered on pushes and PRs to main/master.
+#
+name: R Package Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    container: rocker/verse:4.4.2
+    env:
+      ZZCOLLAB_CONTAINER: "true"
+      CI_TOOLS_LIB: "/tmp/ci-tools"
+      RENV_CONFIG_REPOS_OVERRIDE: "https://packagemanager.posit.co/cran/__linux__/noble/latest"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache renv packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/R/renv
+          key: renv-${{ hashFiles('renv.lock') }}
+          restore-keys: |
+            renv-
+
+      - name: Install renv and restore project packages
+        run: |
+          Rscript -e "\
+            install.packages('renv', repos = 'https://cloud.r-project.org'); \
+            renv::restore(prompt = FALSE)"
+
+      - name: Install CI tools to separate library
+        run: |
+          mkdir -p $CI_TOOLS_LIB
+          Rscript --no-init-file -e "\
+            install.packages(c('rcmdcheck', 'tinytest'),
+              lib = Sys.getenv('CI_TOOLS_LIB'),
+              repos = 'https://cloud.r-project.org')"
+
+      - name: Run R CMD check
+        run: |
+          Rscript --no-init-file -e "\
+            rlib <- Sys.glob('renv/library/*/*')[1]; \
+            libs <- c(Sys.getenv('CI_TOOLS_LIB'), rlib, .libPaths()); \
+            .libPaths(libs[!is.na(libs) & nchar(libs) > 0]); \
+            rcmdcheck::rcmdcheck(
+              args = '--no-manual', error_on = 'error')"
