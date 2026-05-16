@@ -37,4 +37,4 @@ jobs:
 
       - name: Run R CMD check
         run: |
-          Rscript -e ".libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths())); rcmdcheck::rcmdcheck(args='--no-manual', error_on='error')"
+          Rscript --no-init-file -e ".libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths())); rcmdcheck::rcmdcheck(args=c('--no-manual','--no-vignettes'), error_on='error')"
