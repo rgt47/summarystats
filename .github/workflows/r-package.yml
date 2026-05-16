@@ -41,14 +41,13 @@ jobs:
         run: |
           mkdir -p $CI_TOOLS_LIB
           Rscript --no-init-file -e "\
-            .libPaths(Sys.getenv('CI_TOOLS_LIB')); \
             install.packages(c('rcmdcheck', 'tinytest'),
               lib = Sys.getenv('CI_TOOLS_LIB'),
               repos = 'https://cloud.r-project.org')"
 
       - name: Run R CMD check
         run: |
-          Rscript -e "\
+          Rscript --no-init-file -e "\
             .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths())); \
             rcmdcheck::rcmdcheck(
               args = '--no-manual', error_on = 'error')"
