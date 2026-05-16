@@ -1,0 +1,76 @@
+name: Render Reports
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'analysis/**'
+      - 'R/**'
+      - 'renv.lock'
+      - 'Dockerfile'
+      - '.github/workflows/render-report.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'analysis/**'
+      - 'R/**'
+      - 'renv.lock'
+      - 'Dockerfile'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: |
+          echo "Building computational environment..."
+          docker build -t compendium-env .
+
+      - name: Restore packages and render all manuscripts
+        run: |
+          docker run --rm -e CI=true \
+            -v ${{ github.workspace }}:/project \
+            -w /project compendium-env \
+            Rscript -e '
+              renv::restore()
+              rmds <- list.files(
+                "analysis", pattern = "^report[.]Rmd$",
+                recursive = TRUE, full.names = TRUE
+              )
+              cat("Found", length(rmds), "manuscripts to render\n\n")
+              failed <- character()
+              for (rmd in rmds) {
+                cat("=== Rendering:", rmd, "===\n")
+                old_wd <- setwd(dirname(rmd))
+                tryCatch(
+                  rmarkdown::render(basename(rmd)),
+                  error = function(e) {
+                    cat("FAILED:", conditionMessage(e), "\n")
+                    failed <<- c(failed, rmd)
+                  }
+                )
+                setwd(old_wd)
+              }
+              cat("\n=== summary ===\n")
+              cat("rendered:", length(rmds) - length(failed), "\n")
+              cat("failed:  ", length(failed), "\n")
+              if (length(failed) > 0) {
+                for (f in failed) cat("  ", f, "\n")
+                quit(status = 1)
+              }
+            '
+
+      - name: Upload rendered PDFs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-manuscripts
+          path: |
+            analysis/**/*.pdf
+          retention-days: 30
+          if-no-files-found: warn
