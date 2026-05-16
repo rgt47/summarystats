@@ -48,6 +48,8 @@ jobs:
       - name: Run R CMD check
         run: |
           Rscript --no-init-file -e "\
-            .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths())); \
+            rlib <- Sys.glob('renv/library/*/*')[1]; \
+            libs <- c(Sys.getenv('CI_TOOLS_LIB'), rlib, .libPaths()); \
+            .libPaths(libs[!is.na(libs) & nchar(libs) > 0]); \
             rcmdcheck::rcmdcheck(
               args = '--no-manual', error_on = 'error')"
