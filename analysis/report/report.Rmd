@@ -67,7 +67,7 @@ Yet MMRM carries substantial practical burdens. The method
 requires specification of a covariance structure, and
 misspecification can inflate Type I error or reduce power
 [@vossoughiSummaryMeasureAnalysis2012]. Degrees-of-freedom
-approximations---Satterthwaite versus Kenward-Roger---remain
+approximations (Satterthwaite versus Kenward-Roger) remain
 unsettled, with different software implementations yielding
 discrepant p-values for the same data
 [@kenwardSmallSampleInference1997; @mmrmPackage2024].
