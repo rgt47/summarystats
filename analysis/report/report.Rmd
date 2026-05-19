@@ -78,8 +78,8 @@ MMRM treatment effect estimate at a single visit is not always
 intuitive to clinical investigators, who may prefer a single,
 interpretable summary of each patient's response trajectory.
 
-An older and simpler tradition---the summary measures
-approach---offers a compelling alternative. First articulated
+An older and simpler tradition, the summary measures
+approach, offers a compelling alternative. First articulated
 systematically by @matthewsAnalysisSerialMeasurements1990,
 this two-stage method reduces each subject's repeated
 measurements to a single scalar summary (e.g., a slope, area
@@ -190,7 +190,8 @@ MMRM's position as the preferred analysis but also revealed
 that the two approaches diverge substantively in a non-trivial
 minority of cases.
 
-However, MMRM faces several practical limitations:
+However, MMRM faces several practical limitations that
+merit mention:
 
 \begin{enumerate}
 \item \textbf{Degrees-of-freedom approximations.}
@@ -503,10 +504,10 @@ pow_range <- results |>
                    .groups = "drop")
 ```
 
-Under complete data (MCAR, 0\% missing), all three
-analytic procedures (SMA-slope, SMA-change, MMRM) recovered
-the true treatment slope effect $\delta = 0.25$ with bias
-below
+We observe that under complete data (MCAR, 0\% missing),
+all three analytic procedures (SMA-slope, SMA-change, MMRM)
+recovered the true treatment slope effect $\delta = 0.25$
+with bias below
 `r sprintf('%.3f', max(abs(hl_complete$bias), na.rm = TRUE))`
 and empirical SE in
 [`r sprintf('%.3f', min(hl_complete$emp_se, na.rm = TRUE))`,
@@ -637,9 +638,9 @@ results |>
 
 # Discussion
 
-The central thesis of this paper is that the summary measures
-approach deserves reconsideration as a primary analysis for
-certain classes of clinical trials. The theoretical literature,
+Our central thesis is that the summary measures approach
+deserves reconsideration as a primary analysis for certain
+classes of clinical trials. The theoretical literature,
 beginning with @matthewsAnalysisSerialMeasurements1990 and
 formalized by @frisonRepeatedMeasuresClinical1992 and
 @frisonLinearlyDivergentTreatment1997, establishes that
@@ -684,12 +685,12 @@ slope summary directly addresses the clinical question ('Does
 the drug slow decline?') in a way that the MMRM treatment
 effect at a single visit does not.
 
-The limitations of summary statistics should be stated
-plainly. When treatment effects are non-monotone (e.g., an
-initial benefit that wanes), no single summary captures the
-full trajectory, and MMRM's flexibility in modelling
-visit-specific effects is genuinely advantageous. Under
-substantial MNAR dropout (say $>$20\%), the summary
+The limitations of summary statistics should, however, be
+stated plainly. When treatment effects are non-monotone
+(e.g., an initial benefit that wanes), no single summary
+captures the full trajectory, and MMRM's flexibility in
+modelling visit-specific effects is genuinely advantageous.
+Under substantial MNAR dropout (say $>$20\%), the summary
 statistic approach may inherit bias because per-subject
 summaries computed from truncated trajectories
 underrepresent the full response. And when the scientific
@@ -765,9 +766,10 @@ Several directions merit further investigation:
 
 ## Morris et al. (2019) ADEMP Compliance
 
-This simulation study was audited against the reporting standards
-proposed by Morris, White, and Crowther [-@morris2019using]. The full
-audit is at `docs/morris-audit-2026-04-17.md`.
+We audited this simulation study against the reporting
+standards proposed by Morris, White, and Crowther
+[-@morris2019using]. The full audit is recorded at
+`docs/morris-audit-2026-04-17.md`.
 
 **Verdict at submission:** Compliant. The audit predates the
 2026-05-11 remediation pass.
