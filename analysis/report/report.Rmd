@@ -90,10 +90,9 @@ structure specification, yields exact p-values from
 well-understood distributions, and produces treatment effect
 estimates that are directly interpretable.
 
-The question addressed in the present paper is whether there
-exist clinical trial settings in which summary statistic-based
-inference is as effective as or superior to MMRM, and what
-those settings look like.
+We ask whether there exist clinical trial settings in which
+summary statistic-based inference is as effective as or superior
+to MMRM, and what those settings look like.
 
 ## The summary measures tradition
 
@@ -292,14 +291,14 @@ settings:
 
 ## Present study
 
-The objectives of the present study are threefold: (1) to
-synthesize the theoretical and empirical literature comparing
-summary statistic and MMRM approaches; (2) to identify
-specific clinical trial design features that favour summary
-statistics; and (3) to conduct a simulation study comparing
-the operating characteristics of summary statistic-based
-ANCOVA and MMRM across a range of design parameters relevant
-to clinical practice.
+Our objectives are threefold: (1) to synthesize the
+theoretical and empirical literature comparing summary statistic
+and MMRM approaches; (2) to identify specific clinical trial
+design features that favour summary statistics; and (3) to
+conduct a simulation study comparing the operating
+characteristics of summary statistic-based ANCOVA and MMRM
+across a range of design parameters relevant to clinical
+practice.
 
 # Methods
 
