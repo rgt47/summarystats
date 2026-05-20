@@ -13,6 +13,7 @@ output:
 fontsize: 11pt
 geometry: "left=3cm,right=5cm,top=2cm,bottom=2cm"
 bibliography: references.bib
+knit: (function(input, encoding) source(normalizePath(file.path(dirname(input), '..', '..', 'tools', 'stage-render.R')))$value(input, encoding))
 csl: statistics-in-medicine.csl
 link-citations: true
 header-includes:
