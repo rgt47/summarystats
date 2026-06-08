@@ -48,7 +48,7 @@ jobs:
                 cat("=== Rendering:", rmd, "===\n")
                 old_wd <- setwd(dirname(rmd))
                 tryCatch(
-                  rmarkdown::render(basename(rmd), output_format = 'html_document'),
+                  rmarkdown::render(basename(rmd), output_format = "html_document"),
                   error = function(e) {
                     cat("FAILED:", conditionMessage(e), "\n")
                     failed <<- c(failed, rmd)
