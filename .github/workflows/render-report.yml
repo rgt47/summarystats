@@ -48,7 +48,7 @@ jobs:
                 cat("=== Rendering:", rmd, "===\n")
                 old_wd <- setwd(dirname(rmd))
                 tryCatch(
-                  rmarkdown::render(basename(rmd)),
+                  rmarkdown::render(basename(rmd), output_format = 'html_document'),
                   error = function(e) {
                     cat("FAILED:", conditionMessage(e), "\n")
                     failed <<- c(failed, rmd)
@@ -69,8 +69,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: rendered-manuscripts
+          name: rendered-html
           path: |
-            analysis/**/*.pdf
+            analysis/**/*.html
           retention-days: 30
           if-no-files-found: warn
