@@ -1,9 +1,5 @@
-# zzcollab manuscript-package R CMD check
-#
-# Runs R CMD check + tinytest suite in a rocker/verse container,
-# triggered on pushes and PRs to main/master.
-#
-name: R Package Check
+# zzcollab r-package.yml v2.8.0
+name: R Package Check (Container)
 
 on:
   push:
@@ -14,17 +10,26 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    container: rocker/verse:4.4.2
+    container: rocker/tidyverse:latest
     env:
       ZZCOLLAB_CONTAINER: "true"
       CI_TOOLS_LIB: "/tmp/ci-tools"
-      RENV_CONFIG_REPOS_OVERRIDE: "https://packagemanager.posit.co/cran/__linux__/noble/latest"
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install system dependencies
+        run: |
+          apt-get update && apt-get install -y jq libcurl4-openssl-dev libssl-dev libxml2-dev cmake
+
+      - name: Validate package files exist
+        run: |
+          test -f DESCRIPTION || { echo "Missing DESCRIPTION"; exit 1; }
+          test -f renv.lock || { echo "Missing renv.lock"; exit 1; }
+          echo "Package files validated"
+
       - name: Cache renv packages
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: ~/.cache/R/renv
           key: renv-${{ hashFiles('renv.lock') }}
@@ -33,23 +38,40 @@ jobs:
 
       - name: Install renv and restore project packages
         run: |
-          Rscript -e "\
-            install.packages('renv', repos = 'https://cloud.r-project.org'); \
-            renv::restore(prompt = FALSE)"
+          Rscript -e "install.packages('renv', repos = 'https://cloud.r-project.org')"
+          Rscript -e "renv::restore(prompt = FALSE)"
 
       - name: Install CI tools to separate library
         run: |
           mkdir -p $CI_TOOLS_LIB
-          Rscript --no-init-file -e "\
-            install.packages(c('rcmdcheck', 'tinytest'),
-              lib = Sys.getenv('CI_TOOLS_LIB'),
-              repos = 'https://cloud.r-project.org')"
+          Rscript -e "install.packages(c('rcmdcheck', 'tinytest'),
+                                       lib = Sys.getenv('CI_TOOLS_LIB'),
+                                       repos = 'https://cloud.r-project.org')"
 
       - name: Run R CMD check
         run: |
           Rscript --no-init-file -e "\
-            rlib <- Sys.glob('renv/library/*/*')[1]; \
+            rlib <- normalizePath(Sys.glob('renv/library/*/*')[1], mustWork = FALSE); \
             libs <- c(Sys.getenv('CI_TOOLS_LIB'), rlib, .libPaths()); \
             .libPaths(libs[!is.na(libs) & nchar(libs) > 0]); \
-            rcmdcheck::rcmdcheck(
-              args = '--no-manual', error_on = 'error')"
+            rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error')"
+
+      - name: Run tests
+        continue-on-error: true
+        run: |
+          Rscript -e "
+            .libPaths(c(Sys.getenv('CI_TOOLS_LIB'), .libPaths()))
+            if (dir.exists('inst/tinytest')) {
+              out <- tinytest::run_test_dir('inst/tinytest')
+              if (any(!as.logical(out))) quit(status = 1)
+            } else {
+              message('No inst/tinytest directory found, skipping tests')
+            }
+          "
+
+      - name: Validate project structure
+        run: |
+          echo "✅ DESCRIPTION found"
+          test -d R && echo "✅ R/ directory found" || echo "⚠️  No R/ directory"
+          echo "✅ renv.lock found"
+          echo "✅ Project structure validated"

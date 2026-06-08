@@ -1,9 +1,17 @@
-# zzcollab render-report.yml v2.7.0
+# zzcollab render-report.yml v2.8.0
+#
+# Tier 3 (render) for all zzcollab research compendia.
+# Builds the project Docker image and renders all manuscripts to HTML
+# inside the container. HTML output validates all R code execution and
+# package reproducibility without requiring a LaTeX installation in CI.
+# PDF rendering is performed on the host using the local xelatex toolchain.
+# Path-filtered to run only when analysis code or environment changes.
+#
 name: Render Reports
 
 on:
   push:
-    branches: [main, master]
+    branches: [ main, master ]
     paths:
       - 'analysis/**'
       - 'R/**'
@@ -11,7 +19,7 @@ on:
       - 'Dockerfile'
       - '.github/workflows/render-report.yml'
   pull_request:
-    branches: [main, master]
+    branches: [ main, master ]
     paths:
       - 'analysis/**'
       - 'R/**'
@@ -66,7 +74,7 @@ jobs:
               }
             '
 
-      - name: Upload rendered PDFs
+      - name: Upload rendered HTML
         if: always()
         uses: actions/upload-artifact@v4
         with:
