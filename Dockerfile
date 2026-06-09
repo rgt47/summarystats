@@ -9,7 +9,7 @@
 # Run:   docker run --rm -v $(pwd):/project -w /project compendium-env Rscript -e '...'
 #======================================================================
 
-FROM rocker/verse:4.4.2
+FROM rocker/tidyverse:4.6.0
 
 ARG DEBIAN_FRONTEND=noninteractive
 

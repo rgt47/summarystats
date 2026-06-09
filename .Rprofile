@@ -1,5 +1,5 @@
 # ==========================================
-# zzcollab .Rprofile v2.4.0
+# zzcollab .Rprofile v2.8.0
 # ==========================================
 # Part 1: User Personal Settings (from ~/.Rprofile)
 # Part 2: renv Activation + Reproducibility Options
@@ -19,6 +19,16 @@ options(
 )
 
 # ==========================================
+# RNG discipline (R-7)
+# ==========================================
+# Pin the RNG algorithm and normal-variate method explicitly so that
+# stochastic analyses (bootstrap, MCMC, cross-validation, simulation)
+# are reproducible across R versions. R 3.6.0 changed the default
+# sample.kind, which silently breaks previously reproducible seeds.
+# Set a project-level seed with set.seed() in each analysis script.
+RNGkind("Mersenne-Twister", "Inversion", "Rejection")
+
+# ==========================================
 # Part 2: Container Detection
 # ==========================================
 # Set ZZCOLLAB_CONTAINER=true in Dockerfile to enable renv
@@ -29,8 +39,8 @@ if (in_container) {
   # Use Posit Package Manager for pre-compiled binaries in container
   # Set both repos AND renv.repos.cran (renv uses this option as its default)
   options(
-    repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/latest"),
-    renv.repos.cran = "https://packagemanager.posit.co/cran/__linux__/noble/latest"
+    repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"),
+    renv.repos.cran = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"
   )
 } else {
   options(repos = c(CRAN = "https://cloud.r-project.org"))
@@ -46,6 +56,8 @@ if (!in_container) {
   # ==========================================
   # Container R: Full renv workflow
   # ==========================================
+
+  message("🐳 Container R session (", Sys.getenv("HOSTNAME", "zzcollab"), ")")
 
   # CI detection (GitHub Actions sets CI=true)
   in_ci <- nzchar(Sys.getenv("CI"))
@@ -103,8 +115,11 @@ if (!in_container) {
     # ==========================================
     # Recover renv infrastructure if missing
     # ==========================================
-    # This handles: renv.lock exists but renv/ doesn't (e.g., git clone)
-    if (!file.exists("renv/activate.R")) {
+    # This handles: renv.lock exists but renv/ doesn't (e.g., git clone on host).
+    # Skip in the container: the baked library at RENV_PATHS_LIBRARY is the
+    # source of truth; renv/ is not bind-mounted and recovery would attempt to
+    # write to a read-only path.
+    if (!file.exists("renv/activate.R") && !in_container) {
       message("\n🔧 ZZCOLLAB: renv.lock found but renv/ missing - recovering...")
       tryCatch({
         renv_init_quiet()
@@ -184,7 +199,7 @@ if (!in_container) {
   }
 
   # Re-apply Posit PM repos AFTER renv::load() (which overrides from lockfile)
-  options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/noble/latest"))
+  options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"))
 }
 
 # ==========================================
