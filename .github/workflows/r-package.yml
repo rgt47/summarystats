@@ -10,10 +10,11 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
-    container: rocker/tidyverse:latest
+    container: rocker/tidyverse:4.6.0
     env:
       ZZCOLLAB_CONTAINER: "true"
       CI_TOOLS_LIB: "/tmp/ci-tools"
+      RENV_CONFIG_REPOS_OVERRIDE: "https://packagemanager.posit.co/cran/__linux__/noble/latest"
 
     steps:
       - uses: actions/checkout@v4
@@ -29,7 +30,7 @@ jobs:
           echo "Package files validated"
 
       - name: Cache renv packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.cache/R/renv
           key: renv-${{ hashFiles('renv.lock') }}
