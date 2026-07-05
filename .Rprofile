@@ -1,5 +1,5 @@
 # ==========================================
-# zzcollab .Rprofile v2.8.0
+# zzcollab .Rprofile v0.1.0
 # ==========================================
 # Part 1: User Personal Settings (from ~/.Rprofile)
 # Part 2: renv Activation + Reproducibility Options
@@ -34,23 +34,37 @@ RNGkind("Mersenne-Twister", "Inversion", "Rejection")
 # Set ZZCOLLAB_CONTAINER=true in Dockerfile to enable renv
 in_container <- Sys.getenv("ZZCOLLAB_CONTAINER") == "true"
 
+# Install mode governs whether renv manages packages. The Dockerfile records it
+# (ZZCOLLAB_INSTALL_MODE) so this profile self-adapts when renv is toggled: in
+# DESCRIPTION-install mode the renv workflow (auto-init, restore, snapshot) is
+# skipped entirely, so removing renv does not get undone by container startup.
+# Default "renv" so images predating this variable keep the full workflow.
+install_mode <- Sys.getenv("ZZCOLLAB_INSTALL_MODE", "renv")
+renv_enabled <- in_container && install_mode != "description"
+
 # Set repos based on environment
 if (in_container) {
-  # Use Posit Package Manager for pre-compiled binaries in container
-  # Set both repos AND renv.repos.cran (renv uses this option as its default)
-  options(
-    repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"),
-    renv.repos.cran = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"
-  )
+  # Use Posit Package Manager for pre-compiled binaries in container. Derive the
+  # mirror from RENV_CONFIG_REPOS_OVERRIDE, which the Dockerfile sets to the
+  # dated PPM URL, so the Ubuntu codename and PPM snapshot live in exactly one
+  # place (the Dockerfile) and cannot drift or be left unsubstituted. Set both
+  # repos AND renv.repos.cran (renv uses the latter as its default).
+  ppm_repo <- Sys.getenv("RENV_CONFIG_REPOS_OVERRIDE",
+                         "https://packagemanager.posit.co/cran/__linux__/noble/latest")
+  options(repos = c(CRAN = ppm_repo), renv.repos.cran = ppm_repo)
 } else {
   options(repos = c(CRAN = "https://cloud.r-project.org"))
 }
 
-if (!in_container) {
+if (!renv_enabled) {
   # ==========================================
-  # Host R: Skip renv
+  # renv not active (host R, or container in DESCRIPTION-install mode)
   # ==========================================
-  message("ℹ️ Host R session (renv skipped - use container for reproducibility)")
+  if (!in_container) {
+    message("ℹ️ Host R session (renv skipped - use container for reproducibility)")
+  } else {
+    message("📦 Container R session (DESCRIPTION-install mode; renv not in use)")
+  }
 
 } else {
   # ==========================================
@@ -72,6 +86,21 @@ if (!in_container) {
   # Activate renv (set project-local library paths)
   if (file.exists("renv/activate.R")) {
     source("renv/activate.R")
+  } else if (in_container && nzchar(Sys.getenv("RENV_PATHS_LIBRARY"))) {
+    # Image-library-authoritative mode: renv/ is not bind-mounted, so there
+    # is no activate.R to source at runtime. The packages were baked into
+    # RENV_PATHS_LIBRARY at build time; put that library on the path directly
+    # so the project's declared packages resolve. renv's library layout is
+    # <RENV_PATHS_LIBRARY>/<platform>/R-<major.minor>/<arch>.
+    renv_lib_root <- Sys.getenv("RENV_PATHS_LIBRARY")
+    baked_lib <- Sys.glob(file.path(renv_lib_root, "*", "R-*", "*"))
+    baked_lib <- baked_lib[dir.exists(baked_lib)]
+    if (length(baked_lib) > 0) {
+      .libPaths(c(baked_lib[[1]], .libPaths()))
+    } else {
+      warning("⚠️  RENV_PATHS_LIBRARY set but no baked library found under ",
+              renv_lib_root, call. = FALSE)
+    }
   }
 
   # renv consent (skips first-time prompts)
@@ -199,7 +228,7 @@ if (!in_container) {
   }
 
   # Re-apply Posit PM repos AFTER renv::load() (which overrides from lockfile)
-  options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/$UBUNTU_CODENAME/$PPM_SNAPSHOT"))
+  options(repos = c(CRAN = ppm_repo))
 }
 
 # ==========================================
