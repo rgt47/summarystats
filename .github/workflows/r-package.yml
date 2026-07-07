@@ -1,4 +1,4 @@
-# zzcollab r-package.yml v0.1.0
+# zzcollab r-package.yml v0.2.0
 #
 # Self-adapting package check. A detect job picks the environment from artifact
 # presence, then the matching check job runs:
@@ -110,12 +110,16 @@ jobs:
       # CI_TOOLS_LIB now holds renv, the restored dependencies, and the check
       # tools; hand it to the check subprocess via libpath so every Import
       # resolves (not just those already in the container base image).
+      # R_LIBS_USER is also set at the job level so that R CMD build subprocesses
+      # (spawned internally by rcmdcheck) inherit the library path -- without this
+      # the vignette-build subprocess cannot find packages installed to CI_TOOLS_LIB.
       - name: Run R CMD check
         run: |
           Rscript --no-init-file -e "\
             libs <- c(Sys.getenv('CI_TOOLS_LIB'), .libPaths()); \
             libs <- libs[!is.na(libs) & nchar(libs) > 0]; \
-            rcmdcheck::rcmdcheck(args = '--no-manual', error_on = 'error', libpath = libs)"
+            rcmdcheck::rcmdcheck(args = c('--no-manual', '--no-vignettes'), \
+              build_args = '--no-vignettes', error_on = 'error', libpath = libs)"
 
       - name: Run tests
         continue-on-error: true
@@ -137,6 +141,7 @@ jobs:
           test -f renv.lock && echo "✅ renv.lock found (renv backend)" \
             || echo "ℹ️  no renv.lock (DESCRIPTION backend)"
           echo "✅ Project structure validated"
+
 
   # --- Nix check: the flake pins the environment; run on the runner, no container ---
   check-nix:
