@@ -85,7 +85,7 @@ jobs:
               cat("=== Rendering:", rmd, "===\n")
               old_wd <- setwd(dirname(rmd))
               tryCatch(
-                rmarkdown::render(basename(rmd), output_format = if (nzchar(Sys.which("pdflatex"))) "pdf_document" else "html_document"),
+                rmarkdown::render(basename(rmd), envir = new.env(), output_format = if (nzchar(Sys.which("pdflatex"))) NULL else "html_document"),
                 error = function(e) {
                   cat("FAILED:", conditionMessage(e), "\n")
                   failed <<- c(failed, rmd)
@@ -139,6 +139,17 @@ jobs:
               if (!is.na(baked_lib) && nzchar(baked_lib)) {
                 .libPaths(c(baked_lib, .libPaths()))
               }
+              # Install the compendium package into the baked library so a
+              # report can library() it (reports commonly load the workspace
+              # package to use its R/ functions). Harmless when R/ is empty;
+              # errors are non-fatal so a report that does not need it still
+              # renders.
+              if (file.exists("DESCRIPTION")) {
+                tryCatch(
+                  install.packages(".", repos = NULL, type = "source"),
+                  error = function(e) cat("compendium self-install skipped:",
+                                          conditionMessage(e), "\n"))
+              }
               rmds <- unique(c(
                 list.files("analysis", pattern = "^report[.]Rmd$",
                            recursive = TRUE, full.names = TRUE),
@@ -151,7 +162,7 @@ jobs:
                 cat("=== Rendering:", rmd, "===\n")
                 old_wd <- setwd(dirname(rmd))
                 tryCatch(
-                  rmarkdown::render(basename(rmd), output_format = if (nzchar(Sys.which("pdflatex"))) "pdf_document" else "html_document"),
+                  rmarkdown::render(basename(rmd), envir = new.env(), output_format = if (nzchar(Sys.which("pdflatex"))) NULL else "html_document"),
                   error = function(e) {
                     cat("FAILED:", conditionMessage(e), "\n")
                     failed <<- c(failed, rmd)
@@ -209,7 +220,7 @@ jobs:
               cat("=== Rendering:", rmd, "===\n")
               old_wd <- setwd(dirname(rmd))
               tryCatch(
-                rmarkdown::render(basename(rmd), output_format = if (nzchar(Sys.which("pdflatex"))) "pdf_document" else "html_document"),
+                rmarkdown::render(basename(rmd), envir = new.env(), output_format = if (nzchar(Sys.which("pdflatex"))) NULL else "html_document"),
                 error = function(e) {
                   cat("FAILED:", conditionMessage(e), "\n")
                   failed <<- c(failed, rmd)
