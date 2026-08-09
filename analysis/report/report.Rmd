@@ -13,7 +13,7 @@ output:
 fontsize: 11pt
 geometry: "left=3cm,right=5cm,top=2cm,bottom=2cm"
 bibliography: references.bib
-knit: (function(input, encoding) source(normalizePath(file.path(dirname(input), '..', '..', 'tools', 'stage-render.R')))$value(input, encoding))
+knit: (function(input, ...) { d <- dirname(input); while (!file.exists(file.path(d, 'tools', 'stamp-render.R')) && d != dirname(d)) d <- dirname(d); source(file.path(d, 'tools', 'stamp-render.R'))$value(input) })
 csl: statistics-in-medicine.csl
 link-citations: true
 header-includes:
@@ -794,7 +794,7 @@ production submission uses the default `n_reps = 1000`.
 
 
 ```{r footer, echo=FALSE, results='asis'}
-src <- sub("^/Users/zenn/Dropbox/prj/", "~/prj/",
+src <- sub("^/Users/zenn/(Library/CloudStorage/)?Dropbox/prj/", "~/prj/",
            knitr::current_input(dir = TRUE))
 cat(sprintf(
   "\n\\vfill\n\n---\n\n*Rendered on %s.*  \n*Source: `%s`*\n",
