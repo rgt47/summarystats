@@ -78,7 +78,23 @@
 ## A path shown with the shortest possible tilde-relative form.
 ## Checks symlinks in ~ so that e.g. ~/prj (-> ~/Library/CloudStorage/
 ## Dropbox/prj) is preferred over the resolved CloudStorage path.
-.stamp_display <- function(path) {
+##
+## When rendering inside a container the project is mounted at a path
+## such as /home/analyst/project, which would name the document by a
+## mount point that means nothing outside the container. The Makefile
+## passes the host path in as ZZ_HOST_ROOT; `root` is the project root
+## as seen from inside. Translating one to the other first makes a
+## containerized render name the same path an interactive one does.
+.stamp_display <- function(path, root = NULL) {
+  host_root <- Sys.getenv('ZZ_HOST_ROOT', unset = '')
+  if (nzchar(host_root) && !is.null(root)) {
+    prefix <- paste0(normalizePath(root, mustWork = FALSE), '/')
+    if (startsWith(path, prefix)) {
+      path <- file.path(sub('/+$', '', host_root),
+                        substring(path, nchar(prefix) + 1L))
+    }
+  }
+
   home <- normalizePath('~', mustWork = FALSE)
 
   candidates <- if (startsWith(path, home)) {
@@ -130,7 +146,7 @@ stamp_render <- function(input, encoding = 'UTF-8', ...) {
 
   ## Provenance triple: source, time, version.
   now         <- Sys.time()
-  src_display <- .stamp_display(input)
+  src_display <- .stamp_display(input, root)
   stamp_time  <- format(now, '%Y-%m-%d %H:%M %Z')
   version     <- .stamp_git_version(root)
 
