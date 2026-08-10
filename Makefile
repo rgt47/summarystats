@@ -53,12 +53,13 @@ CONTAINER_USER := $(shell grep '^ARG USERNAME=' Dockerfile 2>/dev/null | head -1
 CONTAINER_HOME := /home/$(if $(CONTAINER_USER),$(CONTAINER_USER),analyst)
 # Apptainer execs a SIF (auto-binds the CWD; no --platform); docker/podman run
 # the OCI image with explicit mounts. Both expose the project at the CWD.
+HOST_TZ := $(shell readlink /etc/localtime 2>/dev/null | sed -e 's|.*zoneinfo/||')
 ifeq ($(CONTAINER_RUNTIME),apptainer)
-  DOCKER_RUN = ZZ_HOST_ROOT="$(CURDIR)" apptainer exec $(SIF)
+  DOCKER_RUN = ZZ_HOST_ROOT="$(CURDIR)" TZ="$(HOST_TZ)" apptainer exec $(SIF)
 else
   DOCKER_RUN = $(CONTAINER_RUNTIME) run --rm --platform $(PLATFORM) \
     -v "$(CURDIR)":$(CONTAINER_HOME)/project \
-    -e ZZ_HOST_ROOT="$(CURDIR)" \
+    -e ZZ_HOST_ROOT="$(CURDIR)" -e TZ="$(HOST_TZ)" \
     -w $(CONTAINER_HOME)/project $(PACKAGE_NAME)
 endif
 
