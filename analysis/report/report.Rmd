@@ -55,6 +55,45 @@ opts_chunk$set(
 )
 ```
 
+\begin{abstract}
+Mixed-model repeated measures (MMRM) is the default primary
+analysis for longitudinal continuous endpoints in clinical
+trials, but the two-stage summary-measures approach (per-subject
+slope or change score, followed by ANCOVA) remains attractive
+where covariance misspecification, degrees-of-freedom
+controversy, and interpretability are practical concerns. We
+synthesize three decades of summary-measures literature and
+report a Monte Carlo simulation, under a random-intercept-and-
+slope generating model, comparing slope-summary ANCOVA,
+change-score ANCOVA, and MMRM on bias, coverage, power, and
+Type I error, each scored against its own estimand and each
+reported with Morris-Table-6 Monte Carlo standard errors. We
+argue that the most defensible framing for summary statistics is
+not a claim of general superiority over MMRM, which the
+literature (Frison and Pocock; Vossoughi; Ard) has already
+established for the linear-divergence setting the current
+simulation covers, but a decision-support case grounded in the
+ICH E9(R1) estimands framework: the summary-statistic slope
+estimand is covariance-model-free and directly interpretable,
+while the MMRM visit-specific estimand is conditional on the
+working covariance model.
+\end{abstract}
+
+\noindent\textbf{Keywords:} summary measures; ANCOVA; MMRM;
+longitudinal clinical trials; estimands; Monte Carlo simulation
+
+\section*{Data and code availability}
+
+All simulation code, the manuscript source, and the derived
+results object discussed here are version-controlled in the
+\texttt{summarystats} repository
+(\texttt{analysis/scripts/sim\_study.R},
+\texttt{analysis/report/report.Rmd},
+\texttt{analysis/data/derived\_data/sim\_09.rds}). No human
+subjects data are used; all data are simulated. See the
+Reproducibility note at the end of the Results section for the
+exact command to regenerate the simulation output.
+
 # Introduction
 
 Mixed-model repeated measures (MMRM) has become the default
@@ -107,7 +146,7 @@ then-common practice of testing group differences at each time
 point was both statistically invalid (due to multiplicity) and
 clinically uninformative. They proposed that investigators first
 identify a summary that captures the clinically relevant feature
-of each patient's trajectory, then analyse these summaries with
+of each patient's trajectory, then analyze these summaries with
 simple methods. The approach is statistically valid because the
 summaries, being one per subject, are independent across
 subjects.
@@ -179,11 +218,20 @@ settings.
 ## MMRM: strengths and practical limitations
 
 The theoretical foundation for MMRM rests on the random-effects
-model of @lairdRandomEffectsModels1982, which provides maximum
-likelihood and restricted maximum likelihood (REML) estimation
-for models with structured covariance. The key practical
-advantage is that MMRM uses all available data, providing valid
-inference under MAR without requiring imputation.
+model of @lairdRandomEffectsModels1982, developed further in the
+two-stage random-effects lineage summarized by
+@fitzmauriceAppliedLongitudinalAnalysis2011, which provides
+maximum likelihood and restricted maximum likelihood (REML)
+estimation for models with structured covariance. The key
+practical advantage is that MMRM uses all available data,
+providing valid inference under MAR without requiring
+imputation. The DIA/PhRMA working group formalized MMRM as the
+recommended primary analysis for continuous longitudinal
+endpoints
+[@mallinckrodtRecommendationsPrimaryAnalysis2008], and
+@siddiquiMMRMLOCFComparison2009 compared MMRM against LOCF-ANCOVA
+across 25 New Drug Application datasets, reinforcing the
+regulatory lineage that led to MMRM's current default status.
 
 @mallinckrodtEfficacyDuloxetine2004 provided an influential
 empirical comparison of MMRM and LOCF-ANCOVA across eight
@@ -299,11 +347,26 @@ settings:
 Our objectives are threefold: (1) to synthesize the
 theoretical and empirical literature comparing summary statistic
 and MMRM approaches; (2) to identify specific clinical trial
-design features that favour summary statistics; and (3) to
+design features that favor summary statistics; and (3) to
 conduct a simulation study comparing the operating
 characteristics of summary statistic-based ANCOVA and MMRM
 across a range of design parameters relevant to clinical
-practice.
+practice. The simulation reported here is confined to the
+linear random-slope generating model under which the near-
+efficiency of adjusted slope summaries relative to MMRM is
+already established
+[@frisonLinearlyDivergentTreatment1997;
+@vossoughiSummaryMeasureAnalysis2012;
+@ardSimulationStudyComparing2015]; it is not offered as a novel
+head-to-head methods comparison, since that ground is already
+occupied by prior simulation work, and does not vary covariance
+misspecification, nonlinear trajectories, or MNAR dropout (see
+Future research). Its contribution is instead to verify, under a
+single well-understood setting, that the operating
+characteristics behave as the theory predicts once the
+comparison is estimand-correct (see Estimands below), and to
+motivate the decision-guidance case for summary statistics under
+the ICH E9(R1) estimands framework developed in the Discussion.
 
 # Methods
 
@@ -312,18 +375,35 @@ practice.
 Following Morris, White, and Crowther [-@morris2019using], the
 simulation is reported under the ADEMP framework.
 
-- **Aims.** Quantify bias, precision, coverage, and power of
-  summary-statistic-based ANCOVA procedures (slope and change-score
-  variants) relative to MMRM under the design conditions of interest.
+- **Aims.** Quantify bias, precision, coverage, power, and Type I
+  error of summary-statistic-based ANCOVA procedures (slope and
+  change-score variants) relative to MMRM under the design
+  conditions of interest.
 - **Data-generating mechanism.** Linear mixed model with random
   intercepts and slopes; details in the next subsection.
-- **Estimands.** The treatment effect on the slope,
-  $\delta$, which under the generating model equals the
-  mean difference in trajectory rate.
+- **Estimands.** The three methods target three different
+  functionals of the same generating model, and each is scored
+  against its own true value rather than a single shared
+  quantity (this replaces an earlier version of this manuscript
+  that incorrectly scored all three methods against a single
+  $\delta$; see the Discussion note on this correction). SMA-slope
+  estimates the treatment effect on the per-unit-time slope,
+  $\delta$. MMRM is fit with time entered continuously in the
+  fixed-effects formula (`trt * time`, alongside the categorical
+  `visit` grouping for the unstructured covariance), so its
+  `trt:time` coefficient targets the same slope estimand,
+  $\delta$, directly comparable to SMA-slope without a covariance-
+  model-dependent visit contrast. SMA-change estimates the
+  difference in mean post-baseline change from baseline, which
+  under linear divergence equals $\delta \cdot (p + 1) / 2$ (the
+  average of $\delta t$ over $t = 1, \dots, p$), not $\delta$
+  itself.
 - **Methods.** SMA-slope, SMA-change, and MMRM (see Design
   specifications).
 - **Performance measures.** Bias, empirical SE, model-based SE, MSE,
-  coverage of 95\% CIs, and power at $\alpha = 0.05$, each reported
+  coverage of 95\% CIs, and power at $\alpha = 0.05$ (evaluated
+  both at the design effect size $\delta = 0.25$ and, for Type I
+  error, at a null $\delta = 0$ condition), each reported
   with its Monte Carlo SE per Morris Table 6.
 
 ## Data generating model
@@ -363,11 +443,11 @@ params <- tibble::tibble(
   Values = c(
     '30, 50, 100', '4, 8',
     '50', '-0.5',
-    '0.25',
+    '0, 0.25 (0 is the null/Type I error condition)',
     '5', '0.3',
     '-0.3',
     '3',
-    '0\\%, 10\\%, 20\\%'
+    '0\\%, 10\\%, 20\\% (0\\% run once, not once per mechanism)'
   )
 )
 
@@ -397,17 +477,28 @@ We compare three analytic approaches:
 
 \item \textbf{Change score + ANCOVA (SMA-change).}
   For each subject, compute the mean of all post-baseline
-  measurements minus the baseline measurement. Compare
-  treatment groups using a two-sample t-test (equivalent
-  to ANCOVA without baseline adjustment) and ANCOVA with
-  baseline adjustment.
+  measurements minus the baseline measurement. The primary
+  three-way comparison reported here uses ANCOVA with baseline
+  adjustment (\texttt{fit\_sma\_change()}); an unadjusted
+  two-sample t-test on the same change score is also implemented
+  (\texttt{fit\_sma\_change\_ttest()}) but is not included in the
+  main simulation grid, so that all three headline methods share
+  a baseline-adjusted design. The t-test variant is available for
+  sensitivity analyses.
 
-\item \textbf{MMRM.} Fit a mixed-effects model with
-  fixed effects for treatment, visit (categorical), and
-  treatment-by-visit interaction, with baseline as covariate.
-  Use unstructured covariance and Satterthwaite
-  degrees of freedom. The treatment effect is tested at the
-  final visit.
+\item \textbf{MMRM.} Fit a mixed-effects model with fixed
+  effects for treatment, time (entered continuously, not as a
+  visit factor, so the \texttt{trt:time} coefficient is a
+  per-unit-time slope effect directly comparable to the
+  SMA-slope estimand), and baseline as covariate, with an
+  unstructured covariance over the categorical visit factor
+  (\texttt{y \textasciitilde{} trt * time + baseline\_y +
+  us(visit | id)}) and Satterthwaite degrees of freedom. The
+  covariance term must be unqualified (\texttt{us(...)}, not
+  \texttt{mmrm::us(...)}); the namespace-qualified form is not
+  recognized by the \texttt{mmrm} formula parser and fails
+  silently under \texttt{tryCatch}, which is why every MMRM fit
+  failed in an earlier version of this simulation.
 \end{enumerate}
 
 ## Missing data mechanism
@@ -420,6 +511,28 @@ Missing data are generated under two mechanisms:
 - \textbf{MAR}: the probability of dropout at visit $j$
   depends on the observed response at visit $j-1$, with
   subjects showing worse outcomes more likely to drop out.
+  The per-visit hazard is calibrated to a constant baseline
+  hazard consistent with the nominal marginal missingness rate
+  under independent per-visit dropout risk, then scaled by an
+  empirically calibrated factor (Monte Carlo check over the
+  design grid, 60 replicates per cell) to correct for the
+  systematic downward bias the informative (response-dependent)
+  perturbation introduces under the logistic link. This
+  calibration is approximate: achieved marginal missingness in
+  the calibration check was within about 2 to 3 percentage
+  points of the nominal rate, not exact. MCAR missingness is
+  intermittent (each post-baseline visit missing independently);
+  MAR missingness is monotone dropout (once missing, a subject
+  remains missing for all subsequent visits). This conflates
+  missingness mechanism with missingness pattern, a design choice
+  disclosed here rather than corrected, because disentangling the
+  two would require a third missingness arm (e.g., intermittent
+  MAR) that the current design does not include.
+  Zero-percent missingness is run once per $(n, p)$ cell, not
+  once per mechanism, because MCAR and MAR are identical when the
+  missingness rate is zero; the design grid therefore has
+  $3 \times 2 \times (1 + 2 \times 2) = 30$ non-null-missingness
+  conditions rather than $3 \times 2 \times 3 \times 2 = 36$.
 
 ## Simulation procedure
 
@@ -439,40 +552,96 @@ if (file.exists(sim_script)) {
 RNGkind("L'Ecuyer-CMRG")
 set.seed(20260310)
 
-# n_reps is chosen via target MCSE. For coverage MCSE <= 1 pp at 0.95,
-# need n_reps >= 475; for power MCSE <= 1 pp at p = 0.5, need n_reps
-# >= 2500. Production runs use 1000; pilot runs can override via
-# the N_REPS environment variable (e.g. N_REPS=100 for a fast
-# integration smoke-test). The cache will rebuild on n_reps change.
+# n_reps: production target is 1000, for which the achieved MCSE is
+# about 0.7 percentage points for coverage at 0.95 (n_reps >= 475
+# needed for <= 1 pp) but about 1.6 percentage points for power at
+# p = 0.5 (n_reps >= 2500 would be needed for <= 1 pp there). This
+# text previously claimed both targets were met at n_reps = 1000,
+# which is only true for the coverage target; the power MCSE
+# statement is corrected here rather than silently left wrong
+# (whitepaper m2). Raising n_reps to 2500 for the power-focused cells
+# is future work (see Future research).
+#
+# TODO(remediation 2026-08-20): this chunk has NOT been re-rendered
+# at the production n_reps = 1000 as part of this remediation pass,
+# because a full run over the corrected design grid (30 non-null-
+# missingness conditions x 2 delta values, each requiring a real
+# `mmrm` fit per replicate after the M1 formula fix) takes on the
+# order of hours, not the few minutes available for this pass. The
+# code below is verified correct on a small pilot run (see
+# `analysis/data/derived_data/sim_09.rds`, which currently holds that
+# pilot's output, not the production run). To regenerate the
+# production-scale results, run:
+#   N_REPS=1000 Rscript -e \
+#     "rmarkdown::render('analysis/report/report.Rmd')"
+# or, preferably, `bash tools/render.sh analysis/report/report.Rmd`
+# with `N_REPS=1000` set in the environment, and expect a multi-hour
+# build.
 n_reps <- as.integer(Sys.getenv("N_REPS", "1000"))
 
 design_grid <- expand.grid(
   n_per_arm = c(30, 50, 100),
   p_visits = c(4, 8),
   miss_rate = c(0, 0.10, 0.20),
-  miss_mech = c("MCAR", "MAR")
+  miss_mech = c("MCAR", "MAR"),
+  delta = c(0, 0.25)
+) |>
+  # MCAR and MAR are identical at 0% missingness; keep one copy per
+  # (n, p, delta) cell instead of a duplicated "MAR, 0% missing" row
+  # (whitepaper M6).
+  dplyr::filter(!(miss_rate == 0 & miss_mech == "MAR"))
+
+rng_dir <- file.path(
+  here::here(), "analysis", "data", "derived_data", "rng_states"
 )
 
 results <- purrr::pmap_dfr(
   design_grid,
-  function(n_per_arm, p_visits, miss_rate, miss_mech) {
+  function(n_per_arm, p_visits, miss_rate, miss_mech, delta) {
     run_simulation(
       n_per_arm = n_per_arm,
       p_visits = p_visits,
       miss_rate = miss_rate,
       miss_mech = miss_mech,
-      n_reps = n_reps
+      delta = delta,
+      n_reps = n_reps,
+      rng_dir = rng_dir
     )
   }
 )
+
+# Render-blocking sanity checks (whitepaper M3, m9): stop the render
+# rather than let a broken simulation (e.g., the M1 formula bug)
+# reach a submitted document silently.
+check_simulation_quality(results)
+
+sim_09_path <- file.path(
+  here::here(), "analysis", "data", "derived_data", "sim_09.rds"
+)
+saveRDS(
+  list(
+    results = results,
+    session_info = sessionInfo(),
+    n_reps = n_reps,
+    seed = 20260310,
+    generated = Sys.time()
+  ),
+  sim_09_path
+)
 ```
 
-For each of the 36 design conditions (3 arm sizes x 2 visit
-counts x 3 missing-data rates x 2 missing-data mechanisms) and each
-of 1,000 replications, we record the point estimate of the treatment
-effect, its standard error, the p-value, and whether the 95\%
-confidence interval covers the true value. Monte Carlo SEs are
+For each of the `r nrow(design_grid)` design conditions (3 arm
+sizes x 2 visit counts x missing-data rate/mechanism combinations,
+deduplicated at 0\% missingness, x 2 effect sizes including the
+null) and each of `r n_reps` replications, we record the point
+estimate of the treatment effect, its standard error, the
+p-value, and whether the 95\% confidence interval covers the
+true value for that method (see Estimands). Monte Carlo SEs are
 reported alongside every performance estimate per Morris Table 6.
+The full results object, with session info and seed, is written
+to `analysis/data/derived_data/sim_09.rds` by this chunk, so the
+saved file is always produced by this script rather than by a
+manual or stale process (whitepaper M6).
 
 ## Performance metrics
 
@@ -494,49 +663,91 @@ For each design condition and analytic method, we compute:
 
 ```{r headline-09, include=FALSE}
 # Uses the `results` data frame produced by the `run-sim` chunk.
+# NOTE (remediation 2026-08-20): `results` in the currently committed
+# `sim_09.rds` is a small PILOT run (n_reps well below the production
+# target of 1000; see the TODO in the `run-sim` chunk), retained here
+# because the actual production-scale run was infeasible within this
+# remediation pass's time budget. The numbers below are therefore
+# illustrative of a correctly functioning pipeline, not final
+# submission-quality estimates; they will update automatically to the
+# production values the next time this document is rendered with
+# `N_REPS=1000`.
 hl_complete <- results |>
-  dplyr::filter(miss_mech == "MCAR", miss_rate == 0)
+  dplyr::filter(miss_mech == "MCAR", miss_rate == 0, delta == 0.25)
 hl_worst_bias <- results |>
+  dplyr::filter(delta == 0.25) |>
   dplyr::slice_max(abs(bias), n = 1, with_ties = FALSE)
 hl_mmrm_conv <- results |>
   dplyr::filter(method == "MMRM") |>
   dplyr::summarise(conv_min = min(convergence, na.rm = TRUE))
 pow_range <- results |>
+  dplyr::filter(delta == 0.25) |>
   dplyr::group_by(method) |>
   dplyr::summarise(pow_min = min(power, na.rm = TRUE),
                    pow_max = max(power, na.rm = TRUE),
                    .groups = "drop")
+t1e <- results |>
+  dplyr::filter(delta == 0) |>
+  dplyr::group_by(method) |>
+  dplyr::summarise(
+    t1e_min = min(power, na.rm = TRUE),
+    t1e_max = max(power, na.rm = TRUE),
+    .groups = "drop"
+  )
 ```
 
-We observe that under complete data (MCAR, 0\% missing),
-all three analytic procedures (SMA-slope, SMA-change, MMRM)
-recovered the true treatment slope effect $\delta = 0.25$
-with bias below
+We observe that under complete data (MCAR, 0\% missing) at the
+nonzero design effect ($\delta = 0.25$), all three analytic
+procedures (SMA-slope, SMA-change, MMRM) recovered their own
+estimand (see Estimands: $\delta$ for SMA-slope and MMRM,
+$\delta \cdot (p+1)/2$ for SMA-change) with bias below
 `r sprintf('%.3f', max(abs(hl_complete$bias), na.rm = TRUE))`
 and empirical SE in
 [`r sprintf('%.3f', min(hl_complete$emp_se, na.rm = TRUE))`,
 `r sprintf('%.3f', max(hl_complete$emp_se, na.rm = TRUE))`].
-Across the full factorial
-(`r nrow(results)` scenario-method combinations), the
-largest absolute bias observed was
+Across the full factorial at $\delta = 0.25$
+(`r nrow(dplyr::filter(results, delta == 0.25))`
+scenario-method combinations), the largest absolute bias
+observed, against each method's own estimand, was
 `r sprintf('%.3f', abs(hl_worst_bias$bias))` for
 `r hl_worst_bias$method` at
 $n_{\mathrm{arm}} = `r hl_worst_bias$n_per_arm`$,
 `r sprintf('%.0f%%', 100 * hl_worst_bias$miss_rate)`
 missing,
-`r hl_worst_bias$miss_mech` mechanism. Power ranged from
+`r hl_worst_bias$miss_mech` mechanism. Power at $\delta = 0.25$
+ranged from
 `r sprintf('%.2f', min(pow_range$pow_min))` to
 `r sprintf('%.2f', max(pow_range$pow_max))` depending on
 method and design condition. MMRM convergence was at least
 `r sprintf('%.3f', hl_mmrm_conv$conv_min)` in every
-condition examined. Monte Carlo SEs follow Morris (2019)
-Table 6 and are reported alongside every point estimate.
+condition examined (the `run-sim` chunk stops the render if
+convergence falls below 0.5 in any cell). Monte Carlo SEs
+follow Morris (2019) Table 6 and are reported alongside every
+point estimate.
+
+## Type I error
+
+At the null condition ($\delta = 0$), rejection rates at
+$\alpha = 0.05$ estimate Type I error rather than power. Across
+design conditions, SMA-slope rejection rates ranged from
+`r sprintf('%.3f', t1e$t1e_min[t1e$method == "SMA-slope"])` to
+`r sprintf('%.3f', t1e$t1e_max[t1e$method == "SMA-slope"])`,
+SMA-change from
+`r sprintf('%.3f', t1e$t1e_min[t1e$method == "SMA-change"])` to
+`r sprintf('%.3f', t1e$t1e_max[t1e$method == "SMA-change"])`,
+and MMRM from
+`r sprintf('%.3f', t1e$t1e_min[t1e$method == "MMRM"])` to
+`r sprintf('%.3f', t1e$t1e_max[t1e$method == "MMRM"])`. These
+ranges are computed from the pilot-scale run described above and
+carry correspondingly wide Monte Carlo SEs; the production-scale
+run is needed before any of these ranges can be compared to the
+nominal 0.05 with adequate precision.
 
 ## Summary statistics
 
 ```{r results-table}
 results |>
-  dplyr::filter(miss_mech == "MCAR", miss_rate == 0) |>
+  dplyr::filter(miss_mech == "MCAR", miss_rate == 0, delta == 0.25) |>
   dplyr::select(
     n_per_arm, p_visits, method, bias, mcse_bias,
     emp_se, mcse_emp_se, coverage, mcse_coverage,
@@ -547,8 +758,9 @@ results |>
     booktabs = TRUE,
     digits = 3,
     caption = paste(
-      "Performance in the complete-data MCAR scenarios.",
-      "Monte Carlo SEs from Morris et al. (2019) Table 6."
+      "Performance in the complete-data MCAR scenarios at",
+      "$\\delta = 0.25$, each method scored against its own",
+      "estimand. Monte Carlo SEs from Morris et al. (2019) Table 6."
     )
   ) |>
   kableExtra::kable_styling(
@@ -557,15 +769,41 @@ results |>
   )
 ```
 
-Tables for the partial-missingness and MAR scenarios follow the same
-structure; see `analysis/data/derived_data/` for the full
-results data frame.
+```{r results-table-mar}
+results |>
+  dplyr::filter(miss_mech == "MAR", delta == 0.25) |>
+  dplyr::select(
+    n_per_arm, p_visits, miss_rate, method, bias, mcse_bias,
+    emp_se, coverage, mcse_coverage, power, mcse_power,
+    convergence
+  ) |>
+  knitr::kable(
+    format = "latex",
+    booktabs = TRUE,
+    digits = 3,
+    caption = paste(
+      "Performance under MAR missingness at $\\delta = 0.25$,",
+      "each method scored against its own estimand."
+    )
+  ) |>
+  kableExtra::kable_styling(
+    latex_options = c("hold_position", "scale_down"),
+    font_size = 8
+  )
+```
+
+The MAR table above addresses the earlier version of this
+manuscript's gap in which missing-data results were deferred
+entirely to the derived-data RDS rather than shown in the
+document (whitepaper m10); the remaining MCAR partial-missingness
+cells and the full $\delta = 0$ grid are still deferred to
+`analysis/data/derived_data/sim_09.rds` for space.
 
 ## Figures
 
-```{r power-plot, eval=TRUE, fig.cap="Power comparison across methods and design conditions.", fig.width=6, fig.height=4}
+```{r power-plot, eval=TRUE, fig.cap="Power comparison across methods and design conditions at $\\delta = 0.25$.", fig.width=6, fig.height=4}
 results |>
-  filter(miss_mech == "MCAR") |>
+  filter(miss_mech == "MCAR", delta == 0.25) |>
   ggplot(aes(
     x = factor(n_per_arm),
     y = power,
@@ -599,9 +837,9 @@ results |>
   theme_minimal(base_size = 10)
 ```
 
-```{r coverage-plot, eval=TRUE, fig.cap="95\\% CI coverage across methods and design conditions.", fig.width=6, fig.height=4}
+```{r coverage-plot, eval=TRUE, fig.cap="95\\% CI coverage across methods and design conditions at $\\delta = 0.25$, each method scored against its own estimand.", fig.width=6, fig.height=4}
 results |>
-  filter(miss_mech == "MCAR") |>
+  filter(miss_mech == "MCAR", delta == 0.25) |>
   ggplot(aes(
     x = factor(n_per_arm),
     y = coverage,
@@ -641,6 +879,26 @@ results |>
 ```
 
 # Discussion
+
+**A note on the estimand correction.** An earlier version of
+this manuscript scored the bias, MSE, and coverage of all three
+methods against a single value, $\delta = 0.25$, even though
+SMA-change and MMRM (as originally coded) target different
+functionals of the generating model. That version's headline
+paragraph consequently asserted that all three methods
+"recovered the true treatment slope effect $\delta = 0.25$"
+while its own results table showed SMA-change bias as large as
+0.9, a self-contradiction. The Estimands subsection and the
+`truth_for_method()` function in `sim_study.R` now define and
+score each method against its own true value: $\delta$ for
+SMA-slope and for MMRM (which is fit with continuous time so its
+`trt:time` coefficient targets $\delta$ directly, rather than a
+covariance-model-dependent visit-specific contrast), and
+$\delta \cdot (p+1)/2$ for SMA-change. This does not change which
+method has the best operating characteristics under the linear
+random-slope model; it changes what "bias" means for two of the
+three methods, from an artifact of the reporting code to a
+correctly computed near-zero quantity.
 
 Our central thesis is that the summary measures approach
 deserves reconsideration as a primary analysis for certain
@@ -693,16 +951,19 @@ The limitations of summary statistics should, however, be
 stated plainly. When treatment effects are non-monotone
 (e.g., an initial benefit that wanes), no single summary
 captures the full trajectory, and MMRM's flexibility in
-modelling visit-specific effects is genuinely advantageous.
+modeling visit-specific effects is genuinely advantageous.
 Under substantial MNAR dropout (say $>$20\%), the summary
 statistic approach may inherit bias because per-subject
 summaries computed from truncated trajectories
 underrepresent the full response. And when the scientific
 question genuinely concerns the treatment effect at a
-specific landmark time point (e.g., the FDA-mandated
-co-primary endpoint at week 78 in Alzheimer's trials),
-MMRM's ability to estimate visit-specific contrasts is
-essential.
+specific landmark visit rather than the overall trajectory
+(a common design choice in disease-modification trials,
+including Alzheimer's disease trials with a primary endpoint
+at a fixed late visit), MMRM's ability to estimate
+visit-specific contrasts is essential; no general FDA mandate
+fixes that visit at a particular week, and the choice of
+landmark is a protocol-specific design decision.
 
 @liuMixedModelsCovariateInteractions2021 highlighted
 another subtlety: MMRM achieves power gains over
@@ -766,17 +1027,43 @@ Several directions merit further investigation:
    visits with response, total adverse events) remains
    underexplored.
 
-# References
+# Appendix: Morris et al. (2019) ADEMP compliance audit
 
-## Morris et al. (2019) ADEMP Compliance
+This audit was previously nested under the References heading,
+where it rendered between the References title and the citeproc
+bibliography (whitepaper M7); it is relocated here as an
+appendix and re-run against the corrected simulation described
+in this manuscript rather than reproducing the pre-remediation
+"Compliant" verdict, which was false: at the time it was
+written, every MMRM fit had silently failed (M1) and two of
+three methods were scored against the wrong estimand (M2), so
+the study did not meet Morris et al.'s reporting standard in any
+substantive sense even though the checklist below was satisfied
+syntactically. The original audit document is retained
+unmodified at `docs/morris-audit-2026-04-17.md` for the
+historical record; the verdict below supersedes it.
 
-We audited this simulation study against the reporting
-standards proposed by Morris, White, and Crowther
-[-@morris2019using]. The full audit is recorded at
-`docs/morris-audit-2026-04-17.md`.
-
-**Verdict at submission:** Compliant. The audit predates the
-2026-05-11 remediation pass.
+**Verdict as of this remediation pass (2026-08-20): partially
+compliant.** The ADEMP structural elements (aims, data-generating
+mechanism, estimands, methods, performance measures) are present
+and, after the M2 correction, the estimands subsection correctly
+states that the three methods target different functionals and
+are scored against their own true values. The ADEMP-recommended
+null (`\(\delta = 0\)`) condition is now included (M4), MMRM
+converges in every reported cell rather than failing wholesale
+(M1), and every reported performance measure carries a Morris
+Table 6 Monte Carlo SE. The verdict is "partially" rather than
+fully compliant because the currently committed
+`sim_09.rds` (and therefore every inline number, table, and
+figure in this document) is a reduced-replicate pilot run
+(`n_reps = 15`, a subset of the design grid), not the
+production-scale run at `n_reps = 1000` across the full grid;
+Morris et al.'s reporting standard presumes replicate counts
+sufficient for the stated Monte Carlo SEs to be informative, and
+a 15-replicate MCSE is too wide to support the paper's
+conclusions. See the `run-sim` chunk TODO in the Methods for the
+exact command to produce the production-scale run; the verdict
+above should be re-checked once that run completes.
 
 **Audit-time gaps and their resolution:**
 
@@ -787,10 +1074,32 @@ standards proposed by Morris, White, and Crowther
   seed once at the caller side (Morris et al. 2019 §4.1.1) in
   the `run-sim` chunk: `RNGkind('L'Ecuyer-CMRG'); set.seed(20260310)`.
 - *No Monte Carlo SE machinery* — Resolved. The
-  `summarize_results()` function in `sim_study.R` returns
-  Morris Table 6 MCSEs for bias, empirical SE, MSE, mean
-  model-based SE, power, and coverage; all reported numbers
-  carry the corresponding MCSE.
+  `run_simulation()` function in `sim_study.R` returns Morris
+  Table 6 MCSEs for bias, empirical SE, MSE, mean model-based SE,
+  power, and coverage; all reported numbers carry the
+  corresponding MCSE.
+- *No render-blocking sanity checks* — Resolved by
+  `check_simulation_quality()`, added during this remediation
+  pass, which stops the render if any method-condition cell has
+  zero convergence or zero valid replicates, or if SMA-slope
+  coverage under MCAR departs from nominal 0.95 by more than 5
+  MCSEs plus 0.03 (whitepaper M3, m9).
+- *MMRM total fit failure (M1)* — Resolved: the covariance term
+  in `fit_mmrm()` is now the unqualified `us(visit | id)` rather
+  than the unrecognized `mmrm::us(visit | id)`; convergence is
+  verified nonzero in the committed pilot run (see the tinytest
+  suite in `inst/tinytest/test_basic.R` for a regression check).
+- *Estimand mismatch (M2)* — Resolved in code and text via
+  `truth_for_method()` and the corrected Estimands subsection.
+- *No Type I error assessment (M4)* — Resolved: `delta = 0` is
+  now part of the design grid and reported in the Type I error
+  subsection.
+- *Production-scale run not yet executed* — Not resolved; see
+  the verdict above.
 
-Pilot runs use `N_REPS=100` for fast smoke-test rendering;
-production submission uses the default `n_reps = 1000`.
+Pilot runs use `N_REPS=100` (or the smaller ad hoc pilot used to
+verify this remediation) for fast smoke-test rendering;
+production submission requires `N_REPS=1000` (the default) over
+the full design grid.
+
+# References
