@@ -5,3 +5,5 @@
 | Staged PDF | Source | Version | Rendered |
 |---|---|---|---|
 | `report-2026-08-15-1635-7dbf322.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `7dbf322` | 2026-08-15 16:35 PDT |
+| `report-2026-08-20-1839-6cc6e3a-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `6cc6e3a-wip` | 2026-08-20 18:39 PDT |
+| `report-2026-08-20-2011-7b468d2-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `7b468d2-wip` | 2026-08-20 20:11 PDT |

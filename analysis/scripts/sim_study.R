@@ -238,7 +238,7 @@ fit_mmrm <- function(dat) {
     est_val <- s[idx, 1]
     se_val <- s[idx, 2]
     df_val <- s[idx, 3]
-    pval <- s[idx, 4]
+    pval <- s[idx, 5]
 
     list(
       est = est_val,

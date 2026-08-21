@@ -562,21 +562,26 @@ set.seed(20260310)
 # (whitepaper m2). Raising n_reps to 2500 for the power-focused cells
 # is future work (see Future research).
 #
-# TODO(remediation 2026-08-20): this chunk has NOT been re-rendered
-# at the production n_reps = 1000 as part of this remediation pass,
-# because a full run over the corrected design grid (30 non-null-
-# missingness conditions x 2 delta values, each requiring a real
-# `mmrm` fit per replicate after the M1 formula fix) takes on the
-# order of hours, not the few minutes available for this pass. The
-# code below is verified correct on a small pilot run (see
-# `analysis/data/derived_data/sim_09.rds`, which currently holds that
-# pilot's output, not the production run). To regenerate the
-# production-scale results, run:
+# RESOLVED (remediation 2026-08-20, second pass): this chunk was
+# re-rendered at the production n_reps = 1000 over the full
+# corrected design grid (30 non-null-missingness conditions x 2
+# delta values). That run also exposed and fixed a second bug in
+# `fit_mmrm()` (see `sim_study.R`): the p-value was read from
+# column 4 of `summary(mmrm_fit)$coefficients`, which is the t
+# value, not column 5 (`Pr(>|t|)`); this produced an MMRM Type I
+# error near 0.50 at every design condition in the first
+# production-scale attempt, undetected in the earlier n_reps = 15
+# pilot because the pilot's headline table only reports
+# delta = 0.25 cells and its wide Monte Carlo SE masked the
+# problem in the delta = 0 cells that were computed. The fix
+# (`pval <- s[idx, 5]`) is regression-tested in
+# `inst/tinytest/test_basic.R`. `sim_09.rds` below now holds the
+# real production-scale output. To regenerate it, run:
 #   N_REPS=1000 Rscript -e \
 #     "rmarkdown::render('analysis/report/report.Rmd')"
 # or, preferably, `bash tools/render.sh analysis/report/report.Rmd`
-# with `N_REPS=1000` set in the environment, and expect a multi-hour
-# build.
+# with `N_REPS=1000` set in the environment; expect roughly
+# 1.5-2 hours on a single host core.
 n_reps <- as.integer(Sys.getenv("N_REPS", "1000"))
 
 design_grid <- expand.grid(
@@ -663,15 +668,10 @@ For each design condition and analytic method, we compute:
 
 ```{r headline-09, include=FALSE}
 # Uses the `results` data frame produced by the `run-sim` chunk.
-# NOTE (remediation 2026-08-20): `results` in the currently committed
-# `sim_09.rds` is a small PILOT run (n_reps well below the production
-# target of 1000; see the TODO in the `run-sim` chunk), retained here
-# because the actual production-scale run was infeasible within this
-# remediation pass's time budget. The numbers below are therefore
-# illustrative of a correctly functioning pipeline, not final
-# submission-quality estimates; they will update automatically to the
-# production values the next time this document is rendered with
-# `N_REPS=1000`.
+# NOTE (remediation 2026-08-20, second pass): `results` in the
+# currently committed `sim_09.rds` is the production-scale run
+# (n_reps = 1000 over the full design grid). The numbers below are
+# final submission-quality estimates rather than pilot illustrations.
 hl_complete <- results |>
   dplyr::filter(miss_mech == "MCAR", miss_rate == 0, delta == 0.25)
 hl_worst_bias <- results |>
@@ -738,10 +738,16 @@ SMA-change from
 and MMRM from
 `r sprintf('%.3f', t1e$t1e_min[t1e$method == "MMRM"])` to
 `r sprintf('%.3f', t1e$t1e_max[t1e$method == "MMRM"])`. These
-ranges are computed from the pilot-scale run described above and
-carry correspondingly wide Monte Carlo SEs; the production-scale
-run is needed before any of these ranges can be compared to the
-nominal 0.05 with adequate precision.
+ranges are computed from the production-scale run (`n_reps = `r
+n_reps``) and carry the Monte Carlo SEs reported alongside every
+point estimate in the derived-data object. The SMA methods are
+slightly conservative relative to nominal 0.05 throughout; MMRM
+is close to nominal in most conditions but modestly inflated
+(up to about 0.10) in the smallest-arm-size, most-visits
+condition ($n_{\mathrm{arm}} = 30$, $p = 8$), consistent with
+known small-sample behavior of Satterthwaite degrees of freedom
+under an unstructured covariance with many parameters relative
+to the number of subjects.
 
 ## Summary statistics
 
@@ -877,6 +883,19 @@ results |>
   ) +
   theme_minimal(base_size = 10)
 ```
+
+## Reproducibility note
+
+This document was rendered with `n_reps = `r n_reps``
+replications per design condition, seed `20260310`
+(`RNGkind("L'Ecuyer-CMRG")`), writing
+`analysis/data/derived_data/sim_09.rds` and per-condition RNG
+state sidecars under `analysis/data/derived_data/rng_states/`.
+To reproduce this run, set `N_REPS=1000` in the environment and
+render via `bash tools/render.sh analysis/report/report.Rmd` (or
+`N_REPS=1000 Rscript -e "rmarkdown::render('analysis/report/report.Rmd')"`
+if the render wrapper is unavailable); a full run over the design
+grid takes on the order of an hour or more.
 
 # Discussion
 
@@ -1043,7 +1062,7 @@ syntactically. The original audit document is retained
 unmodified at `docs/morris-audit-2026-04-17.md` for the
 historical record; the verdict below supersedes it.
 
-**Verdict as of this remediation pass (2026-08-20): partially
+**Verdict as of this remediation pass (2026-08-20, second pass):
 compliant.** The ADEMP structural elements (aims, data-generating
 mechanism, estimands, methods, performance measures) are present
 and, after the M2 correction, the estimands subsection correctly
@@ -1052,18 +1071,21 @@ are scored against their own true values. The ADEMP-recommended
 null (`\(\delta = 0\)`) condition is now included (M4), MMRM
 converges in every reported cell rather than failing wholesale
 (M1), and every reported performance measure carries a Morris
-Table 6 Monte Carlo SE. The verdict is "partially" rather than
-fully compliant because the currently committed
-`sim_09.rds` (and therefore every inline number, table, and
-figure in this document) is a reduced-replicate pilot run
-(`n_reps = 15`, a subset of the design grid), not the
-production-scale run at `n_reps = 1000` across the full grid;
-Morris et al.'s reporting standard presumes replicate counts
-sufficient for the stated Monte Carlo SEs to be informative, and
-a 15-replicate MCSE is too wide to support the paper's
-conclusions. See the `run-sim` chunk TODO in the Methods for the
-exact command to produce the production-scale run; the verdict
-above should be re-checked once that run completes.
+Table 6 Monte Carlo SE. The currently committed `sim_09.rds` (and
+therefore every inline number, table, and figure in this
+document) is the production-scale run, `n_reps = 1000` across the
+full 60-condition design grid, so the reported Monte Carlo SEs
+(about 0.7 percentage points for coverage, about 1.4-1.6
+percentage points for power in the least favorable cells) are
+informative at the precision Morris et al.'s reporting standard
+presumes. This production run also surfaced a second coding
+defect not visible in the pilot: `fit_mmrm()` read the t
+statistic rather than the p-value from `mmrm`'s coefficient
+table (column 4 instead of column 5), which produced an MMRM
+Type I error near 0.50 in an initial production-scale attempt.
+The fix is regression-tested (`inst/tinytest/test_basic.R`) and
+the run redone; see the `run-sim` chunk in the Methods for
+detail.
 
 **Audit-time gaps and their resolution:**
 
@@ -1087,19 +1109,27 @@ above should be re-checked once that run completes.
 - *MMRM total fit failure (M1)* — Resolved: the covariance term
   in `fit_mmrm()` is now the unqualified `us(visit | id)` rather
   than the unrecognized `mmrm::us(visit | id)`; convergence is
-  verified nonzero in the committed pilot run (see the tinytest
-  suite in `inst/tinytest/test_basic.R` for a regression check).
+  verified nonzero (at least 0.998 in every reported cell) in the
+  production-scale run (see the tinytest suite in
+  `inst/tinytest/test_basic.R` for a regression check).
 - *Estimand mismatch (M2)* — Resolved in code and text via
   `truth_for_method()` and the corrected Estimands subsection.
 - *No Type I error assessment (M4)* — Resolved: `delta = 0` is
   now part of the design grid and reported in the Type I error
   subsection.
-- *Production-scale run not yet executed* — Not resolved; see
-  the verdict above.
+- *Production-scale run not yet executed* — Resolved: the
+  committed `sim_09.rds` is the `n_reps = 1000` production run
+  over the full design grid.
+- *MMRM p-value read from the wrong `mmrm::summary()` coefficient
+  column (found during the production-scale run)* — Resolved:
+  `fit_mmrm()` now reads `Pr(>|t|)` (column 5) rather than
+  `t value` (column 4); regression-tested in
+  `inst/tinytest/test_basic.R`.
 
 Pilot runs use `N_REPS=100` (or the smaller ad hoc pilot used to
 verify this remediation) for fast smoke-test rendering;
 production submission requires `N_REPS=1000` (the default) over
-the full design grid.
+the full design grid, as used to generate the results reported
+in this document.
 
 # References

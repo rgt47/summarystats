@@ -139,8 +139,8 @@
   \renewcommand{\headrulewidth}{0pt}%
   \renewcommand{\footrulewidth}{0.4pt}}
 \renewcommand{\stampsource}{\textasciitilde{}/\allowbreak{}prj/\allowbreak{}res/\allowbreak{}09-summary-stats-efficacy/\allowbreak{}summarystats/\allowbreak{}analysis/\allowbreak{}report/\allowbreak{}report.Rmd}
-\renewcommand{\stamptime}{2026-08-15 16:35 PDT}
-\renewcommand{\stampversion}{\detokenize{7dbf322}}
+\renewcommand{\stamptime}{2026-08-20 20:11 PDT}
+\renewcommand{\stampversion}{\detokenize{7b468d2-wip}}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{booktabs}
@@ -177,7 +177,7 @@
 
 \title{Summary statistics for treatment efficacy estimation in clinical trials: when simplicity rivals complexity}
 \author{Ronald G. Thomas, Ph.D.\thanks{Wertheim School of Public Health, UCSD; ORCID: 0000-0003-1686-4965}}
-\date{August 15, 2026}
+\date{August 20, 2026}
 
 \begin{document}
 \maketitle
@@ -187,6 +187,45 @@
 \tableofcontents
 }
 \setstretch{1.1}
+\begin{abstract}
+Mixed-model repeated measures (MMRM) is the default primary
+analysis for longitudinal continuous endpoints in clinical
+trials, but the two-stage summary-measures approach (per-subject
+slope or change score, followed by ANCOVA) remains attractive
+where covariance misspecification, degrees-of-freedom
+controversy, and interpretability are practical concerns. We
+synthesize three decades of summary-measures literature and
+report a Monte Carlo simulation, under a random-intercept-and-
+slope generating model, comparing slope-summary ANCOVA,
+change-score ANCOVA, and MMRM on bias, coverage, power, and
+Type I error, each scored against its own estimand and each
+reported with Morris-Table-6 Monte Carlo standard errors. We
+argue that the most defensible framing for summary statistics is
+not a claim of general superiority over MMRM, which the
+literature (Frison and Pocock; Vossoughi; Ard) has already
+established for the linear-divergence setting the current
+simulation covers, but a decision-support case grounded in the
+ICH E9(R1) estimands framework: the summary-statistic slope
+estimand is covariance-model-free and directly interpretable,
+while the MMRM visit-specific estimand is conditional on the
+working covariance model.
+\end{abstract}
+
+\noindent\textbf{Keywords:} summary measures; ANCOVA; MMRM;
+longitudinal clinical trials; estimands; Monte Carlo simulation
+
+\section*{Data and code availability}
+
+All simulation code, the manuscript source, and the derived
+results object discussed here are version-controlled in the
+\texttt{summarystats} repository
+(\texttt{analysis/scripts/sim\_study.R},
+\texttt{analysis/report/report.Rmd},
+\texttt{analysis/data/derived\_data/sim\_09.rds}). No human
+subjects data are used; all data are simulated. See the
+Reproducibility note at the end of the Results section for the
+exact command to regenerate the simulation output.
+
 \section{Introduction}\label{introduction}
 
 Mixed-model repeated measures (MMRM) has become the default
@@ -236,7 +275,7 @@ then-common practice of testing group differences at each time
 point was both statistically invalid (due to multiplicity) and
 clinically uninformative. They proposed that investigators first
 identify a summary that captures the clinically relevant feature
-of each patient's trajectory, then analyse these summaries with
+of each patient's trajectory, then analyze these summaries with
 simple methods. The approach is statistically valid because the
 summaries, being one per subject, are independent across
 subjects.
@@ -308,13 +347,19 @@ settings.
 \subsection{MMRM: strengths and practical limitations}\label{mmrm-strengths-and-practical-limitations}
 
 The theoretical foundation for MMRM rests on the random-effects
-model of\textsuperscript{\citeproc{ref-lairdRandomEffectsModels1982}{2}}, which provides maximum
-likelihood and restricted maximum likelihood (REML) estimation
-for models with structured covariance. The key practical
-advantage is that MMRM uses all available data, providing valid
-inference under MAR without requiring imputation.
+model of\textsuperscript{\citeproc{ref-lairdRandomEffectsModels1982}{2}}, developed further in the
+two-stage random-effects lineage summarized by\textsuperscript{\citeproc{ref-fitzmauriceAppliedLongitudinalAnalysis2011}{14}}, which provides
+maximum likelihood and restricted maximum likelihood (REML)
+estimation for models with structured covariance. The key
+practical advantage is that MMRM uses all available data,
+providing valid inference under MAR without requiring
+imputation. The DIA/PhRMA working group formalized MMRM as the
+recommended primary analysis for continuous longitudinal
+endpoints\textsuperscript{\citeproc{ref-mallinckrodtRecommendationsPrimaryAnalysis2008}{15}}, and\textsuperscript{\citeproc{ref-siddiquiMMRMLOCFComparison2009}{16}} compared MMRM against LOCF-ANCOVA
+across 25 New Drug Application datasets, reinforcing the
+regulatory lineage that led to MMRM's current default status.
 
-\textsuperscript{\citeproc{ref-mallinckrodtEfficacyDuloxetine2004}{14}} provided an influential
+\textsuperscript{\citeproc{ref-mallinckrodtEfficacyDuloxetine2004}{17}} provided an influential
 empirical comparison of MMRM and LOCF-ANCOVA across eight
 duloxetine trials. While MMRM and LOCF agreed on significance
 in 82\% of 202 comparisons, MMRM yielded significant results
@@ -386,10 +431,10 @@ choice to reliably analyse the linear trend data with a
 moderate to large number of measurements and/or small to
 moderate sample sizes.'\,'
 
-In the Alzheimer's disease trial literature,\textsuperscript{\citeproc{ref-ardMixedModelRepeated2011}{15}} compared MMRM with slope models
+In the Alzheimer's disease trial literature,\textsuperscript{\citeproc{ref-ardMixedModelRepeated2011}{18}} compared MMRM with slope models
 for cognitive outcomes and found that slope models provide a
 more intuitive and clinically meaningful way of demonstrating
-disease-modifying effects.\textsuperscript{\citeproc{ref-ardSimulationStudyComparing2015}{16}}
+disease-modifying effects.\textsuperscript{\citeproc{ref-ardSimulationStudyComparing2015}{19}}
 followed with a simulation study showing that both methods
 maintain proper Type I error, but the slope model has a
 moderate power advantage when the true progression is linear
@@ -422,38 +467,67 @@ settings:
 Our objectives are threefold: (1) to synthesize the
 theoretical and empirical literature comparing summary statistic
 and MMRM approaches; (2) to identify specific clinical trial
-design features that favour summary statistics; and (3) to
+design features that favor summary statistics; and (3) to
 conduct a simulation study comparing the operating
 characteristics of summary statistic-based ANCOVA and MMRM
 across a range of design parameters relevant to clinical
-practice.
+practice. The simulation reported here is confined to the
+linear random-slope generating model under which the near-
+efficiency of adjusted slope summaries relative to MMRM is
+already established\textsuperscript{\citeproc{ref-vossoughiSummaryMeasureAnalysis2012}{3},\citeproc{ref-frisonLinearlyDivergentTreatment1997}{8},\citeproc{ref-ardSimulationStudyComparing2015}{19}}; it is not offered as a novel
+head-to-head methods comparison, since that ground is already
+occupied by prior simulation work, and does not vary covariance
+misspecification, nonlinear trajectories, or MNAR dropout (see
+Future research). Its contribution is instead to verify, under a
+single well-understood setting, that the operating
+characteristics behave as the theory predicts once the
+comparison is estimand-correct (see Estimands below), and to
+motivate the decision-guidance case for summary statistics under
+the ICH E9(R1) estimands framework developed in the Discussion.
 
 \section{Methods}\label{methods}
 
 \subsection{ADEMP structure}\label{ademp-structure}
 
-Following Morris, White, and Crowther\textsuperscript{\citeproc{ref-morris2019using}{17}}, the
+Following Morris, White, and Crowther\textsuperscript{\citeproc{ref-morris2019using}{20}}, the
 simulation is reported under the ADEMP framework.
 
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Aims.} Quantify bias, precision, coverage, and power of
-  summary-statistic-based ANCOVA procedures (slope and change-score
-  variants) relative to MMRM under the design conditions of interest.
+  \textbf{Aims.} Quantify bias, precision, coverage, power, and Type I
+  error of summary-statistic-based ANCOVA procedures (slope and
+  change-score variants) relative to MMRM under the design
+  conditions of interest.
 \item
   \textbf{Data-generating mechanism.} Linear mixed model with random
   intercepts and slopes; details in the next subsection.
 \item
-  \textbf{Estimands.} The treatment effect on the slope,
-  \(\delta\), which under the generating model equals the
-  mean difference in trajectory rate.
+  \textbf{Estimands.} The three methods target three different
+  functionals of the same generating model, and each is scored
+  against its own true value rather than a single shared
+  quantity (this replaces an earlier version of this manuscript
+  that incorrectly scored all three methods against a single
+  \(\delta\); see the Discussion note on this correction). SMA-slope
+  estimates the treatment effect on the per-unit-time slope,
+  \(\delta\). MMRM is fit with time entered continuously in the
+  fixed-effects formula (\texttt{trt\ *\ time}, alongside the categorical
+  \texttt{visit} grouping for the unstructured covariance), so its
+  \texttt{trt:time} coefficient targets the same slope estimand,
+  \(\delta\), directly comparable to SMA-slope without a covariance-
+  model-dependent visit contrast. SMA-change estimates the
+  difference in mean post-baseline change from baseline, which
+  under linear divergence equals \(\delta \cdot (p + 1) / 2\) (the
+  average of \(\delta t\) over \(t = 1, \dots, p\)), not \(\delta\)
+  itself.
 \item
   \textbf{Methods.} SMA-slope, SMA-change, and MMRM (see Design
   specifications).
 \item
   \textbf{Performance measures.} Bias, empirical SE, model-based SE, MSE,
-  coverage of 95\% CIs, and power at \(\alpha = 0.05\), each reported
+  coverage of 95\% CIs, and power at \(\alpha = 0.05\) (evaluated
+  both at the design effect size \(\delta = 0.25\) and, for Type I
+  error, at a null \(\delta = 0\) condition), each reported
   with its Monte Carlo SE per Morris Table 6.
 \end{itemize}
 
@@ -492,13 +566,13 @@ $n$ (per arm) & 30, 50, 100\\
 $p$ (post-baseline visits) & 4, 8\\
 $\beta_0$ (intercept) & 50\\
 $\beta_1$ (placebo slope) & -0.5\\
-$\delta$ (treatment slope effect) & 0.25\\
+$\delta$ (treatment slope effect) & 0, 0.25 (0 is the null/Type I error condition)\\
 \addlinespace
 $\sigma_{b0}$ (random intercept SD) & 5\\
 $\sigma_{b1}$ (random slope SD) & 0.3\\
 $\rho_{01}$ (intercept-slope correlation) & -0.3\\
 $\sigma_\epsilon$ (residual SD) & 3\\
-Missing data rate & 0\%, 10\%, 20\%\\
+Missing data rate & 0\%, 10\%, 20\% (0\% run once, not once per mechanism)\\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -516,17 +590,28 @@ We compare three analytic approaches:
 
 \item \textbf{Change score + ANCOVA (SMA-change).}
   For each subject, compute the mean of all post-baseline
-  measurements minus the baseline measurement. Compare
-  treatment groups using a two-sample t-test (equivalent
-  to ANCOVA without baseline adjustment) and ANCOVA with
-  baseline adjustment.
+  measurements minus the baseline measurement. The primary
+  three-way comparison reported here uses ANCOVA with baseline
+  adjustment (\texttt{fit\_sma\_change()}); an unadjusted
+  two-sample t-test on the same change score is also implemented
+  (\texttt{fit\_sma\_change\_ttest()}) but is not included in the
+  main simulation grid, so that all three headline methods share
+  a baseline-adjusted design. The t-test variant is available for
+  sensitivity analyses.
 
-\item \textbf{MMRM.} Fit a mixed-effects model with
-  fixed effects for treatment, visit (categorical), and
-  treatment-by-visit interaction, with baseline as covariate.
-  Use unstructured covariance and Satterthwaite
-  degrees of freedom. The treatment effect is tested at the
-  final visit.
+\item \textbf{MMRM.} Fit a mixed-effects model with fixed
+  effects for treatment, time (entered continuously, not as a
+  visit factor, so the \texttt{trt:time} coefficient is a
+  per-unit-time slope effect directly comparable to the
+  SMA-slope estimand), and baseline as covariate, with an
+  unstructured covariance over the categorical visit factor
+  (\texttt{y \textasciitilde{} trt * time + baseline\_y +
+  us(visit | id)}) and Satterthwaite degrees of freedom. The
+  covariance term must be unqualified (\texttt{us(...)}, not
+  \texttt{mmrm::us(...)}); the namespace-qualified form is not
+  recognized by the \texttt{mmrm} formula parser and fails
+  silently under \texttt{tryCatch}, which is why every MMRM fit
+  failed in an earlier version of this simulation.
 \end{enumerate}
 
 \subsection{Missing data mechanism}\label{missing-data-mechanism}
@@ -543,16 +628,44 @@ Missing data are generated under two mechanisms:
   \textbf{MAR}: the probability of dropout at visit \(j\)
   depends on the observed response at visit \(j-1\), with
   subjects showing worse outcomes more likely to drop out.
+  The per-visit hazard is calibrated to a constant baseline
+  hazard consistent with the nominal marginal missingness rate
+  under independent per-visit dropout risk, then scaled by an
+  empirically calibrated factor (Monte Carlo check over the
+  design grid, 60 replicates per cell) to correct for the
+  systematic downward bias the informative (response-dependent)
+  perturbation introduces under the logistic link. This
+  calibration is approximate: achieved marginal missingness in
+  the calibration check was within about 2 to 3 percentage
+  points of the nominal rate, not exact. MCAR missingness is
+  intermittent (each post-baseline visit missing independently);
+  MAR missingness is monotone dropout (once missing, a subject
+  remains missing for all subsequent visits). This conflates
+  missingness mechanism with missingness pattern, a design choice
+  disclosed here rather than corrected, because disentangling the
+  two would require a third missingness arm (e.g., intermittent
+  MAR) that the current design does not include.
+  Zero-percent missingness is run once per \((n, p)\) cell, not
+  once per mechanism, because MCAR and MAR are identical when the
+  missingness rate is zero; the design grid therefore has
+  \(3 \times 2 \times (1 + 2 \times 2) = 30\) non-null-missingness
+  conditions rather than \(3 \times 2 \times 3 \times 2 = 36\).
 \end{itemize}
 
 \subsection{Simulation procedure}\label{simulation-procedure}
 
-For each of the 36 design conditions (3 arm sizes x 2 visit
-counts x 3 missing-data rates x 2 missing-data mechanisms) and each
-of 1,000 replications, we record the point estimate of the treatment
-effect, its standard error, the p-value, and whether the 95\%
-confidence interval covers the true value. Monte Carlo SEs are
+For each of the 60 design conditions (3 arm
+sizes x 2 visit counts x missing-data rate/mechanism combinations,
+deduplicated at 0\% missingness, x 2 effect sizes including the
+null) and each of 1000 replications, we record the point
+estimate of the treatment effect, its standard error, the
+p-value, and whether the 95\% confidence interval covers the
+true value for that method (see Estimands). Monte Carlo SEs are
 reported alongside every performance estimate per Morris Table 6.
+The full results object, with session info and seed, is written
+to \texttt{analysis/data/derived\_data/sim\_09.rds} by this chunk, so the
+saved file is always produced by this script rather than by a
+manual or stale process (whitepaper M6).
 
 \subsection{Performance metrics}\label{performance-metrics}
 
@@ -581,35 +694,58 @@ For each design condition and analytic method, we compute:
 
 \subsection{Headline findings}\label{headline-findings}
 
-We observe that under complete data (MCAR, 0\% missing),
-all three analytic procedures (SMA-slope, SMA-change, MMRM)
-recovered the true treatment slope effect \(\delta = 0.25\)
-with bias below
-0.939
+We observe that under complete data (MCAR, 0\% missing) at the
+nonzero design effect (\(\delta = 0.25\)), all three analytic
+procedures (SMA-slope, SMA-change, MMRM) recovered their own
+estimand (see Estimands: \(\delta\) for SMA-slope and MMRM,
+\(\delta \cdot (p+1)/2\) for SMA-change) with bias below
+0.040
 and empirical SE in
-{[}0.071,
-0.756{]}.
-Across the full factorial
-(108 scenario-method combinations), the
-largest absolute bias observed was
-1.005 for
+{[}0.077,
+0.775{]}.
+Across the full factorial at \(\delta = 0.25\)
+(90
+scenario-method combinations), the largest absolute bias
+observed, against each method's own estimand, was
+0.213 for
 SMA-change at
-\(n_{\mathrm{arm}} = 30\),
-0\%
+\(n_{\mathrm{arm}} = 50\),
+20\%
 missing,
-MAR mechanism. Power ranged from
+MAR mechanism. Power at \(\delta = 0.25\)
+ranged from
 0.07 to
-0.94 depending on
+0.89 depending on
 method and design condition. MMRM convergence was at least
-0.000 in every
-condition examined. Monte Carlo SEs follow Morris (2019)
-Table 6 and are reported alongside every point estimate.
+0.998 in every
+condition examined (the \texttt{run-sim} chunk stops the render if
+convergence falls below 0.5 in any cell). Monte Carlo SEs
+follow Morris (2019) Table 6 and are reported alongside every
+point estimate.
+
+\subsection{Type I error}\label{type-i-error}
+
+At the null condition (\(\delta = 0\)), rejection rates at
+\(\alpha = 0.05\) estimate Type I error rather than power. Across
+design conditions, SMA-slope rejection rates ranged from
+0.031 to
+0.061,
+SMA-change from
+0.039 to
+0.070,
+and MMRM from
+0.047 to
+0.099. These
+ranges are computed from the pilot-scale run described above and
+carry correspondingly wide Monte Carlo SEs; the production-scale
+run is needed before any of these ranges can be compared to the
+nominal 0.05 with adequate precision.
 
 \subsection{Summary statistics}\label{summary-statistics}
 
 \begin{table}[!h]
 \centering
-\caption{\label{tab:results-table}Performance in the complete-data MCAR scenarios. Monte Carlo SEs from Morris et al. (2019) Table 6.}
+\caption{\label{tab:results-table}Performance in the complete-data MCAR scenarios at $\delta = 0.25$, each method scored against its own estimand. Monte Carlo SEs from Morris et al. (2019) Table 6.}
 \centering
 \resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
 \fontsize{8}{10}\selectfont
@@ -617,50 +753,130 @@ Table 6 and are reported alongside every point estimate.
 \toprule
 n\_per\_arm & p\_visits & method & bias & mcse\_bias & emp\_se & mcse\_emp\_se & coverage & mcse\_coverage & power & mcse\_power\\
 \midrule
-30 & 4 & MMRM &  &  &  &  &  &  &  & \\
-30 & 4 & SMA-change & 0.386 & 0.023 & 0.738 & 0.017 & 0.918 & 0.009 & 0.130 & 0.011\\
-30 & 4 & SMA-slope & 0.007 & 0.011 & 0.361 & 0.008 & 0.946 & 0.007 & 0.109 & 0.010\\
-50 & 4 & MMRM &  &  &  &  &  &  &  & \\
-50 & 4 & SMA-change & 0.398 & 0.019 & 0.597 & 0.013 & 0.886 & 0.010 & 0.195 & 0.013\\
+30 & 4 & MMRM & 0.010 & 0.012 & 0.371 & 0.008 & 0.934 & 0.008 & 0.138 & 0.011\\
+30 & 4 & SMA-change & 0.009 & 0.025 & 0.775 & 0.017 & 0.956 & 0.006 & 0.126 & 0.010\\
+30 & 4 & SMA-slope & 0.008 & 0.012 & 0.371 & 0.008 & 0.932 & 0.008 & 0.121 & 0.010\\
+50 & 4 & MMRM & -0.002 & 0.009 & 0.278 & 0.006 & 0.945 & 0.007 & 0.170 & 0.012\\
+50 & 4 & SMA-change & 0.021 & 0.019 & 0.607 & 0.014 & 0.948 & 0.007 & 0.196 & 0.013\\
 \addlinespace
-50 & 4 & SMA-slope & -0.009 & 0.009 & 0.274 & 0.006 & 0.961 & 0.006 & 0.146 & 0.011\\
-100 & 4 & MMRM &  &  &  &  &  &  &  & \\
-100 & 4 & SMA-change & 0.368 & 0.013 & 0.427 & 0.010 & 0.859 & 0.011 & 0.314 & 0.015\\
-100 & 4 & SMA-slope & -0.005 & 0.006 & 0.190 & 0.004 & 0.953 & 0.007 & 0.235 & 0.013\\
-30 & 8 & MMRM &  &  &  &  &  &  &  & \\
+50 & 4 & SMA-slope & -0.004 & 0.009 & 0.279 & 0.006 & 0.949 & 0.007 & 0.151 & 0.011\\
+100 & 4 & MMRM & -0.004 & 0.006 & 0.193 & 0.004 & 0.952 & 0.007 & 0.241 & 0.014\\
+100 & 4 & SMA-change & 0.011 & 0.013 & 0.413 & 0.009 & 0.952 & 0.007 & 0.316 & 0.015\\
+100 & 4 & SMA-slope & -0.005 & 0.006 & 0.191 & 0.004 & 0.957 & 0.006 & 0.242 & 0.014\\
+30 & 8 & MMRM & -0.001 & 0.005 & 0.153 & 0.003 & 0.909 & 0.009 & 0.457 & 0.016\\
 \addlinespace
-30 & 8 & SMA-change & 0.831 & 0.025 & 0.779 & 0.017 & 0.800 & 0.013 & 0.307 & 0.015\\
-30 & 8 & SMA-slope & -0.004 & 0.005 & 0.145 & 0.003 & 0.944 & 0.007 & 0.415 & 0.016\\
-50 & 8 & MMRM &  &  &  &  &  &  &  & \\
-50 & 8 & SMA-change & 0.891 & 0.018 & 0.565 & 0.013 & 0.673 & 0.015 & 0.485 & 0.016\\
-50 & 8 & SMA-slope & 0.001 & 0.003 & 0.105 & 0.002 & 0.959 & 0.006 & 0.639 & 0.015\\
+30 & 8 & SMA-change & 0.040 & 0.024 & 0.752 & 0.017 & 0.957 & 0.006 & 0.339 & 0.015\\
+30 & 8 & SMA-slope & 0.000 & 0.005 & 0.144 & 0.003 & 0.952 & 0.007 & 0.418 & 0.016\\
+50 & 8 & MMRM & 0.007 & 0.004 & 0.112 & 0.003 & 0.939 & 0.008 & 0.665 & 0.015\\
+50 & 8 & SMA-change & 0.016 & 0.018 & 0.561 & 0.013 & 0.961 & 0.006 & 0.496 & 0.016\\
+50 & 8 & SMA-slope & 0.006 & 0.003 & 0.108 & 0.002 & 0.949 & 0.007 & 0.636 & 0.015\\
 \addlinespace
-100 & 8 & MMRM &  &  &  &  &  &  &  & \\
-100 & 8 & SMA-change & 0.873 & 0.013 & 0.422 & 0.009 & 0.434 & 0.016 & 0.777 & 0.013\\
-100 & 8 & SMA-slope & -0.004 & 0.002 & 0.078 & 0.002 & 0.948 & 0.007 & 0.892 & 0.010\\
+100 & 8 & MMRM & -0.002 & 0.002 & 0.079 & 0.002 & 0.944 & 0.007 & 0.888 & 0.010\\
+100 & 8 & SMA-change & -0.003 & 0.013 & 0.408 & 0.009 & 0.950 & 0.007 & 0.765 & 0.013\\
+100 & 8 & SMA-slope & -0.002 & 0.002 & 0.077 & 0.002 & 0.952 & 0.007 & 0.890 & 0.010\\
 \bottomrule
 \end{tabular}}
 \end{table}
 
-Tables for the partial-missingness and MAR scenarios follow the same
-structure; see \texttt{analysis/data/derived\_data/} for the full
-results data frame.
+\begin{table}[!h]
+\centering
+\caption{\label{tab:results-table-mar}Performance under MAR missingness at $\delta = 0.25$, each method scored against its own estimand.}
+\centering
+\resizebox{\ifdim\width>\linewidth\linewidth\else\width\fi}{!}{
+\fontsize{8}{10}\selectfont
+\begin{tabular}[t]{rrrlrrrrrrrr}
+\toprule
+n\_per\_arm & p\_visits & miss\_rate & method & bias & mcse\_bias & emp\_se & coverage & mcse\_coverage & power & mcse\_power & convergence\\
+\midrule
+30 & 4 & 0.1 & MMRM & -0.011 & 0.013 & 0.405 & 0.927 & 0.008 & 0.104 & 0.010 & 1\\
+30 & 4 & 0.1 & SMA-change & 0.017 & 0.026 & 0.835 & 0.950 & 0.007 & 0.129 & 0.011 & 1\\
+30 & 4 & 0.1 & SMA-slope & -0.011 & 0.015 & 0.466 & 0.944 & 0.007 & 0.079 & 0.009 & 1\\
+50 & 4 & 0.1 & MMRM & 0.004 & 0.010 & 0.306 & 0.945 & 0.007 & 0.151 & 0.011 & 1\\
+50 & 4 & 0.1 & SMA-change & -0.069 & 0.019 & 0.616 & 0.952 & 0.007 & 0.130 & 0.011 & 1\\
+\addlinespace
+50 & 4 & 0.1 & SMA-slope & 0.001 & 0.011 & 0.363 & 0.959 & 0.006 & 0.111 & 0.010 & 1\\
+100 & 4 & 0.1 & MMRM & -0.014 & 0.007 & 0.214 & 0.947 & 0.007 & 0.209 & 0.013 & 1\\
+100 & 4 & 0.1 & SMA-change & -0.024 & 0.014 & 0.452 & 0.943 & 0.007 & 0.281 & 0.014 & 1\\
+100 & 4 & 0.1 & SMA-slope & -0.010 & 0.008 & 0.250 & 0.952 & 0.007 & 0.154 & 0.011 & 1\\
+30 & 8 & 0.1 & MMRM & 0.000 & 0.005 & 0.167 & 0.905 & 0.009 & 0.411 & 0.016 & 1\\
+\addlinespace
+30 & 8 & 0.1 & SMA-change & -0.062 & 0.025 & 0.795 & 0.943 & 0.007 & 0.287 & 0.014 & 1\\
+30 & 8 & 0.1 & SMA-slope & 0.004 & 0.009 & 0.270 & 0.959 & 0.006 & 0.209 & 0.013 & 1\\
+50 & 8 & 0.1 & MMRM & 0.002 & 0.004 & 0.123 & 0.927 & 0.008 & 0.573 & 0.016 & 1\\
+50 & 8 & 0.1 & SMA-change & -0.111 & 0.019 & 0.613 & 0.945 & 0.007 & 0.391 & 0.015 & 1\\
+50 & 8 & 0.1 & SMA-slope & 0.003 & 0.006 & 0.202 & 0.954 & 0.007 & 0.291 & 0.014 & 1\\
+\addlinespace
+100 & 8 & 0.1 & MMRM & -0.005 & 0.003 & 0.089 & 0.932 & 0.008 & 0.825 & 0.012 & 1\\
+100 & 8 & 0.1 & SMA-change & -0.096 & 0.013 & 0.418 & 0.941 & 0.007 & 0.680 & 0.015 & 1\\
+100 & 8 & 0.1 & SMA-slope & -0.008 & 0.004 & 0.140 & 0.956 & 0.006 & 0.437 & 0.016 & 1\\
+30 & 4 & 0.2 & MMRM & -0.002 & 0.014 & 0.441 & 0.933 & 0.008 & 0.108 & 0.010 & 1\\
+30 & 4 & 0.2 & SMA-change & -0.042 & 0.026 & 0.831 & 0.959 & 0.006 & 0.100 & 0.009 & 1\\
+\addlinespace
+30 & 4 & 0.2 & SMA-slope & -0.006 & 0.018 & 0.565 & 0.956 & 0.006 & 0.075 & 0.008 & 1\\
+50 & 4 & 0.2 & MMRM & 0.016 & 0.010 & 0.328 & 0.951 & 0.007 & 0.141 & 0.011 & 1\\
+50 & 4 & 0.2 & SMA-change & -0.062 & 0.021 & 0.663 & 0.945 & 0.007 & 0.129 & 0.011 & 1\\
+50 & 4 & 0.2 & SMA-slope & 0.022 & 0.014 & 0.441 & 0.963 & 0.006 & 0.096 & 0.009 & 1\\
+100 & 4 & 0.2 & MMRM & -0.008 & 0.007 & 0.235 & 0.949 & 0.007 & 0.200 & 0.013 & 1\\
+\addlinespace
+100 & 4 & 0.2 & SMA-change & -0.054 & 0.014 & 0.457 & 0.954 & 0.007 & 0.229 & 0.013 & 1\\
+100 & 4 & 0.2 & SMA-slope & 0.002 & 0.010 & 0.324 & 0.946 & 0.007 & 0.144 & 0.011 & 1\\
+30 & 8 & 0.2 & MMRM & 0.004 & 0.006 & 0.189 & 0.897 & 0.010 & 0.371 & 0.015 & 1\\
+30 & 8 & 0.2 & SMA-change & -0.163 & 0.025 & 0.805 & 0.945 & 0.007 & 0.222 & 0.013 & 1\\
+30 & 8 & 0.2 & SMA-slope & -0.014 & 0.011 & 0.363 & 0.950 & 0.007 & 0.124 & 0.010 & 1\\
+\addlinespace
+50 & 8 & 0.2 & MMRM & 0.005 & 0.004 & 0.136 & 0.917 & 0.009 & 0.517 & 0.016 & 1\\
+50 & 8 & 0.2 & SMA-change & -0.213 & 0.020 & 0.645 & 0.928 & 0.008 & 0.312 & 0.015 & 1\\
+50 & 8 & 0.2 & SMA-slope & 0.015 & 0.009 & 0.274 & 0.953 & 0.007 & 0.190 & 0.012 & 1\\
+100 & 8 & 0.2 & MMRM & -0.005 & 0.003 & 0.096 & 0.939 & 0.008 & 0.747 & 0.014 & 1\\
+100 & 8 & 0.2 & SMA-change & -0.187 & 0.014 & 0.440 & 0.923 & 0.008 & 0.551 & 0.016 & 1\\
+\addlinespace
+100 & 8 & 0.2 & SMA-slope & 0.006 & 0.006 & 0.195 & 0.948 & 0.007 & 0.281 & 0.014 & 1\\
+\bottomrule
+\end{tabular}}
+\end{table}
+
+The MAR table above addresses the earlier version of this
+manuscript's gap in which missing-data results were deferred
+entirely to the derived-data RDS rather than shown in the
+document (whitepaper m10); the remaining MCAR partial-missingness
+cells and the full \(\delta = 0\) grid are still deferred to
+\texttt{analysis/data/derived\_data/sim\_09.rds} for space.
 
 \subsection{Figures}\label{figures}
 
 \begin{figure}
 \centering
-\pandocbounded{\includegraphics[keepaspectratio,alt={Power comparison across methods and design conditions.}]{report_files/report_files/figure-latex/power-plot-1.pdf}}
-\caption{Power comparison across methods and design conditions.}
+\pandocbounded{\includegraphics[keepaspectratio,alt={\label{fig:power-plot}Power comparison across methods and design conditions at \textbackslash delta = 0.25.}]{report_files/report_files/figure-latex/power-plot-1.pdf}}
+\caption{\label{fig:power-plot}Power comparison across methods and design conditions at \(\delta = 0.25\).}
 \end{figure}
 
 \begin{figure}
 \centering
-\pandocbounded{\includegraphics[keepaspectratio,alt={95\% CI coverage across methods and design conditions.}]{report_files/report_files/figure-latex/coverage-plot-1.pdf}}
-\caption{95\% CI coverage across methods and design conditions.}
+\pandocbounded{\includegraphics[keepaspectratio,alt={\label{fig:coverage-plot}95\% CI coverage across methods and design conditions at \textbackslash delta = 0.25, each method scored against its own estimand.}]{report_files/report_files/figure-latex/coverage-plot-1.pdf}}
+\caption{\label{fig:coverage-plot}95\% CI coverage across methods and design conditions at \(\delta = 0.25\), each method scored against its own estimand.}
 \end{figure}
 
 \section{Discussion}\label{discussion}
+
+\textbf{A note on the estimand correction.} An earlier version of
+this manuscript scored the bias, MSE, and coverage of all three
+methods against a single value, \(\delta = 0.25\), even though
+SMA-change and MMRM (as originally coded) target different
+functionals of the generating model. That version's headline
+paragraph consequently asserted that all three methods
+``recovered the true treatment slope effect \(\delta = 0.25\)''
+while its own results table showed SMA-change bias as large as
+0.9, a self-contradiction. The Estimands subsection and the
+\texttt{truth\_for\_method()} function in \texttt{sim\_study.R} now define and
+score each method against its own true value: \(\delta\) for
+SMA-slope and for MMRM (which is fit with continuous time so its
+\texttt{trt:time} coefficient targets \(\delta\) directly, rather than a
+covariance-model-dependent visit-specific contrast), and
+\(\delta \cdot (p+1)/2\) for SMA-change. This does not change which
+method has the best operating characteristics under the linear
+random-slope model; it changes what ``bias'' means for two of the
+three methods, from an artifact of the reporting code to a
+correctly computed near-zero quantity.
 
 Our central thesis is that the summary measures approach
 deserves reconsideration as a primary analysis for certain
@@ -697,7 +913,7 @@ stratifying by missing data pattern further improves
 robustness.
 
 The Alzheimer's disease trial literature provides a
-particularly instructive case study.\textsuperscript{\citeproc{ref-ardMixedModelRepeated2011}{15}} and\textsuperscript{\citeproc{ref-ardSimulationStudyComparing2015}{16}}
+particularly instructive case study.\textsuperscript{\citeproc{ref-ardMixedModelRepeated2011}{18}} and\textsuperscript{\citeproc{ref-ardSimulationStudyComparing2015}{19}}
 showed that slope models have a power advantage over MMRM when
 disease progression is approximately linear, which is the
 prevailing assumption for disease-modifying therapies. The
@@ -709,18 +925,21 @@ The limitations of summary statistics should, however, be
 stated plainly. When treatment effects are non-monotone
 (e.g., an initial benefit that wanes), no single summary
 captures the full trajectory, and MMRM's flexibility in
-modelling visit-specific effects is genuinely advantageous.
+modeling visit-specific effects is genuinely advantageous.
 Under substantial MNAR dropout (say \$\textgreater\$20\%), the summary
 statistic approach may inherit bias because per-subject
 summaries computed from truncated trajectories
 underrepresent the full response. And when the scientific
 question genuinely concerns the treatment effect at a
-specific landmark time point (e.g., the FDA-mandated
-co-primary endpoint at week 78 in Alzheimer's trials),
-MMRM's ability to estimate visit-specific contrasts is
-essential.
+specific landmark visit rather than the overall trajectory
+(a common design choice in disease-modification trials,
+including Alzheimer's disease trials with a primary endpoint
+at a fixed late visit), MMRM's ability to estimate
+visit-specific contrasts is essential; no general FDA mandate
+fixes that visit at a particular week, and the choice of
+landmark is a protocol-specific design decision.
 
-\textsuperscript{\citeproc{ref-liuMixedModelsCovariateInteractions2021}{18}} highlighted
+\textsuperscript{\citeproc{ref-liuMixedModelsCovariateInteractions2021}{21}} highlighted
 another subtlety: MMRM achieves power gains over
 complete-case ANCOVA only when time-by-covariate interactions
 are included. Without these, MMRM may be no better than the
@@ -775,7 +994,7 @@ Several directions merit further investigation:
   two approaches.
 \item
   \textbf{Bayesian summary statistics.} Integrating the summary
-  measures approach with Bayesian sample size determination\textsuperscript{\citeproc{ref-baghfalakiBayesianSampleSize2019}{19}} and posterior inference
+  measures approach with Bayesian sample size determination\textsuperscript{\citeproc{ref-baghfalakiBayesianSampleSize2019}{22}} and posterior inference
   could provide a unified framework for design and analysis.
 \item
   \textbf{Extension to non-Gaussian endpoints.} The summary
@@ -785,16 +1004,43 @@ Several directions merit further investigation:
   underexplored.
 \end{enumerate}
 
-\section{References}\label{references}
+\section{Appendix: Morris et al.~(2019) ADEMP compliance audit}\label{appendix-morris-et-al.-2019-ademp-compliance-audit}
 
-\subsection{Morris et al.~(2019) ADEMP Compliance}\label{morris-et-al.-2019-ademp-compliance}
+This audit was previously nested under the References heading,
+where it rendered between the References title and the citeproc
+bibliography (whitepaper M7); it is relocated here as an
+appendix and re-run against the corrected simulation described
+in this manuscript rather than reproducing the pre-remediation
+``Compliant'' verdict, which was false: at the time it was
+written, every MMRM fit had silently failed (M1) and two of
+three methods were scored against the wrong estimand (M2), so
+the study did not meet Morris et al.'s reporting standard in any
+substantive sense even though the checklist below was satisfied
+syntactically. The original audit document is retained
+unmodified at \texttt{docs/morris-audit-2026-04-17.md} for the
+historical record; the verdict below supersedes it.
 
-We audited this simulation study against the reporting
-standards proposed by Morris, White, and Crowther\textsuperscript{\citeproc{ref-morris2019using}{17}}. The full audit is recorded at
-\texttt{docs/morris-audit-2026-04-17.md}.
-
-\textbf{Verdict at submission:} Compliant. The audit predates the
-2026-05-11 remediation pass.
+\textbf{Verdict as of this remediation pass (2026-08-20): partially
+compliant.} The ADEMP structural elements (aims, data-generating
+mechanism, estimands, methods, performance measures) are present
+and, after the M2 correction, the estimands subsection correctly
+states that the three methods target different functionals and
+are scored against their own true values. The ADEMP-recommended
+null (\texttt{\textbackslash{}(\textbackslash{}delta\ =\ 0\textbackslash{})}) condition is now included (M4), MMRM
+converges in every reported cell rather than failing wholesale
+(M1), and every reported performance measure carries a Morris
+Table 6 Monte Carlo SE. The verdict is ``partially'' rather than
+fully compliant because the currently committed
+\texttt{sim\_09.rds} (and therefore every inline number, table, and
+figure in this document) is a reduced-replicate pilot run
+(\texttt{n\_reps\ =\ 15}, a subset of the design grid), not the
+production-scale run at \texttt{n\_reps\ =\ 1000} across the full grid;
+Morris et al.'s reporting standard presumes replicate counts
+sufficient for the stated Monte Carlo SEs to be informative, and
+a 15-replicate MCSE is too wide to support the paper's
+conclusions. See the \texttt{run-sim} chunk TODO in the Methods for the
+exact command to produce the production-scale run; the verdict
+above should be re-checked once that run completes.
 
 \textbf{Audit-time gaps and their resolution:}
 
@@ -810,14 +1056,42 @@ standards proposed by Morris, White, and Crowther\textsuperscript{\citeproc{ref-
   the \texttt{run-sim} chunk: \texttt{RNGkind(\textquotesingle{}L\textquotesingle{}Ecuyer-CMRG\textquotesingle{});\ set.seed(20260310)}.
 \item
   \emph{No Monte Carlo SE machinery} --- Resolved. The
-  \texttt{summarize\_results()} function in \texttt{sim\_study.R} returns
-  Morris Table 6 MCSEs for bias, empirical SE, MSE, mean
-  model-based SE, power, and coverage; all reported numbers
-  carry the corresponding MCSE.
+  \texttt{run\_simulation()} function in \texttt{sim\_study.R} returns Morris
+  Table 6 MCSEs for bias, empirical SE, MSE, mean model-based SE,
+  power, and coverage; all reported numbers carry the
+  corresponding MCSE.
+\item
+  \emph{No render-blocking sanity checks} --- Resolved by
+  \texttt{check\_simulation\_quality()}, added during this remediation
+  pass, which stops the render if any method-condition cell has
+  zero convergence or zero valid replicates, or if SMA-slope
+  coverage under MCAR departs from nominal 0.95 by more than 5
+  MCSEs plus 0.03 (whitepaper M3, m9).
+\item
+  \emph{MMRM total fit failure (M1)} --- Resolved: the covariance term
+  in \texttt{fit\_mmrm()} is now the unqualified \texttt{us(visit\ \textbar{}\ id)} rather
+  than the unrecognized \texttt{mmrm::us(visit\ \textbar{}\ id)}; convergence is
+  verified nonzero in the committed pilot run (see the tinytest
+  suite in \texttt{inst/tinytest/test\_basic.R} for a regression check).
+\item
+  \emph{Estimand mismatch (M2)} --- Resolved in code and text via
+  \texttt{truth\_for\_method()} and the corrected Estimands subsection.
+\item
+  \emph{No Type I error assessment (M4)} --- Resolved: \texttt{delta\ =\ 0} is
+  now part of the design grid and reported in the Type I error
+  subsection.
+\item
+  \emph{Production-scale run not yet executed} --- Not resolved; see
+  the verdict above.
 \end{itemize}
 
-Pilot runs use \texttt{N\_REPS=100} for fast smoke-test rendering;
-production submission uses the default \texttt{n\_reps\ =\ 1000}.
+Pilot runs use \texttt{N\_REPS=100} (or the smaller ad hoc pilot used to
+verify this remediation) for fast smoke-test rendering;
+production submission requires \texttt{N\_REPS=1000} (the default) over
+the full design grid.
+
+\section*{References}\label{references}
+\addcontentsline{toc}{section}{References}
 
 \protect\phantomsection\label{refs}
 \begin{CSLReferences}{0}{1}
@@ -873,28 +1147,40 @@ production submission uses the default \texttt{n\_reps\ =\ 1000}.
 \CSLLeftMargin{13. }%
 \CSLRightInline{Senn S. Change from baseline and analysis of covariance revisited. \emph{Statistics in Medicine}. 2006;25(24):4334-4344. doi:\href{https://doi.org/10.1002/sim.2682}{10.1002/sim.2682}}
 
-\bibitem[\citeproctext]{ref-mallinckrodtEfficacyDuloxetine2004}
+\bibitem[\citeproctext]{ref-fitzmauriceAppliedLongitudinalAnalysis2011}
 \CSLLeftMargin{14. }%
+\CSLRightInline{Fitzmaurice GM, Laird NM, Ware JH. \emph{Applied Longitudinal Analysis}. 2nd ed. Wiley; 2011.}
+
+\bibitem[\citeproctext]{ref-mallinckrodtRecommendationsPrimaryAnalysis2008}
+\CSLLeftMargin{15. }%
+\CSLRightInline{Mallinckrodt CH, Lane PW, Schnell D, Peng Y, Mancuso JP. Recommendations for the primary analysis of continuous endpoints in longitudinal clinical trials. \emph{Drug Information Journal}. 2008;42(4):303-319.}
+
+\bibitem[\citeproctext]{ref-siddiquiMMRMLOCFComparison2009}
+\CSLLeftMargin{16. }%
+\CSLRightInline{Siddiqui O, Hung HMJ, O'Neill R. {MMRM} vs. {LOCF}: A comprehensive comparison based on simulation study and 25 {NDA} datasets. \emph{Journal of Biopharmaceutical Statistics}. 2009;19(2):227-246.}
+
+\bibitem[\citeproctext]{ref-mallinckrodtEfficacyDuloxetine2004}
+\CSLLeftMargin{17. }%
 \CSLRightInline{Mallinckrodt CH, Raskin J, Wohlreich MM, Watkin JG, Detke MJ. The efficacy of duloxetine: A comprehensive summary of results from {MMRM} and {LOCF\_ANCOVA} in eight clinical trials. \emph{BMC Psychiatry}. 2004;4:26. doi:\href{https://doi.org/10.1186/1471-244X-4-26}{10.1186/1471-244X-4-26}}
 
 \bibitem[\citeproctext]{ref-ardMixedModelRepeated2011}
-\CSLLeftMargin{15. }%
+\CSLLeftMargin{18. }%
 \CSLRightInline{Ard MC, Edland SD. Mixed model of repeated measures versus slope models in {Alzheimer's} disease clinical trials. \emph{The Journal of Nutrition, Health \& Aging}. 2011;15(6):437-441. doi:\href{https://doi.org/10.1007/s12603-012-0047-7}{10.1007/s12603-012-0047-7}}
 
 \bibitem[\citeproctext]{ref-ardSimulationStudyComparing2015}
-\CSLLeftMargin{16. }%
+\CSLLeftMargin{19. }%
 \CSLRightInline{Ard MC, Raghavan N, Edland SD. A simulation study comparing slope model with mixed-model repeated measure to assess cognitive data in clinical trials of {Alzheimer's} disease. \emph{Alzheimer's Research \& Therapy}. 2015;7:1-8. doi:\href{https://doi.org/10.1186/s13195-015-0168-z}{10.1186/s13195-015-0168-z}}
 
 \bibitem[\citeproctext]{ref-morris2019using}
-\CSLLeftMargin{17. }%
+\CSLLeftMargin{20. }%
 \CSLRightInline{Morris TP, White IR, Crowther MJ. Using simulation studies to evaluate statistical methods. \emph{Statistics in Medicine}. 2019;38(11):2074-2102. doi:\href{https://doi.org/10.1002/sim.8086}{10.1002/sim.8086}}
 
 \bibitem[\citeproctext]{ref-liuMixedModelsCovariateInteractions2021}
-\CSLLeftMargin{18. }%
+\CSLLeftMargin{21. }%
 \CSLRightInline{Liu GW, Pang L. Mixed models for repeated measures should include time-by-covariate interactions to assure power gains and robustness against dropout bias relative to complete-case {ANCOVA}. \emph{Pharmaceutical Statistics}. Published online 2021. doi:\href{https://doi.org/10.1002/pst.2165}{10.1002/pst.2165}}
 
 \bibitem[\citeproctext]{ref-baghfalakiBayesianSampleSize2019}
-\CSLLeftMargin{19. }%
+\CSLLeftMargin{22. }%
 \CSLRightInline{Baghfalaki T. Bayesian sample size determination for longitudinal studies with continuous response based on different scientific questions of interest. \emph{Journal of Biopharmaceutical Statistics}. 2019;29(2):244-270. doi:\href{https://doi.org/10.1080/10543406.2018.1535501}{10.1080/10543406.2018.1535501}}
 
 \end{CSLReferences}

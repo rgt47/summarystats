@@ -151,6 +151,24 @@ if (requireNamespace("mmrm", quietly = TRUE)) {
       "delta = 0.25 directly, not a visit-contrast multiple of it"
     )
   )
+  expect_true(
+    isTRUE(mmrm_fit$pval >= 0 && mmrm_fit$pval <= 1),
+    info = paste(
+      "fit_mmrm() pval lies in [0, 1]; regression check that the",
+      "Pr(>|t|) column (5) is read from mmrm::summary()$coefficients,",
+      "not the t value column (4), which is unbounded and produced",
+      "~50% Type I error at the null in the production-scale run",
+      "(remediation 2026-08-20, second pass)"
+    )
+  )
+  expect_true(
+    mmrm_fit$pval < 0.01,
+    info = paste(
+      "fit_mmrm() pval is small for a strong true effect",
+      "(delta = 0.25, n_per_arm = 400); a t value miscoded as a",
+      "p-value would not reliably satisfy this"
+    )
+  )
 } else {
   cat("mmrm not installed; skipping fit_mmrm() tests\n")
 }
