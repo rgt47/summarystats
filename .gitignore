@@ -9,3 +9,12 @@ renv/library/
 renv/staging/
 .zzcollab.log
 .make/
+
+# knitr chunk cache: a regenerable local build accelerator, not
+# reproducible source. Its __packages file records whatever packages
+# happened to be attached in the interactive session that built it
+# (not just packages the cached chunk actually uses) and knitr's
+# cache-restore path unconditionally library()s every name in that
+# file, so a stray package there breaks any environment that does
+# not have it (this broke Render Reports CI in a sibling repo).
+analysis/report/cache/
