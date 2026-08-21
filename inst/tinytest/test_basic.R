@@ -7,6 +7,14 @@ library(tinytest)
 # project root). Real assertions here replace the previous
 # placeholder `expect_true(TRUE)` (whitepaper section 5, framing
 # option (c), "the test suite is a placeholder").
+#
+# analysis/ is intentionally .Rbuildignore'd (it is report-driver
+# code, not package API), so it is absent from the tarball R CMD
+# check tests against; sim_study.R is unreachable from that sandbox
+# by any relative path or here::here(). Skip the file rather than
+# error in that case -- the CI "Run tests" step separately runs
+# tinytest::run_test_dir() against the full source checkout, where
+# analysis/ exists and these assertions do execute.
 find_sim_script <- function() {
   candidates <- c(
     "analysis/scripts/sim_study.R",
@@ -23,10 +31,17 @@ find_sim_script <- function() {
       return(normalizePath(cand))
     }
   }
-  stop("sim_study.R not found from working directory ", getwd())
+  NULL
 }
 
 sim_script <- find_sim_script()
+if (is.null(sim_script)) {
+  exit_file(paste(
+    "sim_study.R not reachable from working directory", getwd(),
+    "-- analysis/ is not shipped in the built package (R CMD check",
+    "sandbox); skipping"
+  ))
+}
 source(sim_script)
 
 set.seed(20260820)
