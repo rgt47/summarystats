@@ -139,8 +139,8 @@
   \renewcommand{\headrulewidth}{0pt}%
   \renewcommand{\footrulewidth}{0.4pt}}
 \renewcommand{\stampsource}{\textasciitilde{}/\allowbreak{}prj/\allowbreak{}res/\allowbreak{}09-summary-stats-efficacy/\allowbreak{}summarystats/\allowbreak{}analysis/\allowbreak{}report/\allowbreak{}report.Rmd}
-\renewcommand{\stamptime}{2026-08-20 20:11 PDT}
-\renewcommand{\stampversion}{\detokenize{7b468d2-wip}}
+\renewcommand{\stamptime}{2026-08-20 22:28 PDT}
+\renewcommand{\stampversion}{\detokenize{7fca2d3}}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{booktabs}
@@ -736,10 +736,16 @@ SMA-change from
 and MMRM from
 0.047 to
 0.099. These
-ranges are computed from the pilot-scale run described above and
-carry correspondingly wide Monte Carlo SEs; the production-scale
-run is needed before any of these ranges can be compared to the
-nominal 0.05 with adequate precision.
+ranges are computed from the production-scale run (\texttt{n\_reps\ =}r
+n\_reps``) and carry the Monte Carlo SEs reported alongside every
+point estimate in the derived-data object. The SMA methods are
+slightly conservative relative to nominal 0.05 throughout; MMRM
+is close to nominal in most conditions but modestly inflated
+(up to about 0.10) in the smallest-arm-size, most-visits
+condition (\(n_{\mathrm{arm}} = 30\), \(p = 8\)), consistent with
+known small-sample behavior of Satterthwaite degrees of freedom
+under an unstructured covariance with many parameters relative
+to the number of subjects.
 
 \subsection{Summary statistics}\label{summary-statistics}
 
@@ -855,6 +861,19 @@ cells and the full \(\delta = 0\) grid are still deferred to
 \pandocbounded{\includegraphics[keepaspectratio,alt={\label{fig:coverage-plot}95\% CI coverage across methods and design conditions at \textbackslash delta = 0.25, each method scored against its own estimand.}]{report_files/report_files/figure-latex/coverage-plot-1.pdf}}
 \caption{\label{fig:coverage-plot}95\% CI coverage across methods and design conditions at \(\delta = 0.25\), each method scored against its own estimand.}
 \end{figure}
+
+\subsection{Reproducibility note}\label{reproducibility-note}
+
+This document was rendered with \texttt{n\_reps\ =\ 1000}
+replications per design condition, seed \texttt{20260310}
+(\texttt{RNGkind("L\textquotesingle{}Ecuyer-CMRG")}), writing
+\texttt{analysis/data/derived\_data/sim\_09.rds} and per-condition RNG
+state sidecars under \texttt{analysis/data/derived\_data/rng\_states/}.
+To reproduce this run, set \texttt{N\_REPS=1000} in the environment and
+render via \texttt{bash\ tools/render.sh\ analysis/report/report.Rmd} (or
+\texttt{N\_REPS=1000\ Rscript\ -e\ "rmarkdown::render(\textquotesingle{}analysis/report/report.Rmd\textquotesingle{})"}
+if the render wrapper is unavailable); a full run over the design
+grid takes on the order of an hour or more.
 
 \section{Discussion}\label{discussion}
 
@@ -1020,7 +1039,7 @@ syntactically. The original audit document is retained
 unmodified at \texttt{docs/morris-audit-2026-04-17.md} for the
 historical record; the verdict below supersedes it.
 
-\textbf{Verdict as of this remediation pass (2026-08-20): partially
+\textbf{Verdict as of this remediation pass (2026-08-20, second pass):
 compliant.} The ADEMP structural elements (aims, data-generating
 mechanism, estimands, methods, performance measures) are present
 and, after the M2 correction, the estimands subsection correctly
@@ -1029,18 +1048,21 @@ are scored against their own true values. The ADEMP-recommended
 null (\texttt{\textbackslash{}(\textbackslash{}delta\ =\ 0\textbackslash{})}) condition is now included (M4), MMRM
 converges in every reported cell rather than failing wholesale
 (M1), and every reported performance measure carries a Morris
-Table 6 Monte Carlo SE. The verdict is ``partially'' rather than
-fully compliant because the currently committed
-\texttt{sim\_09.rds} (and therefore every inline number, table, and
-figure in this document) is a reduced-replicate pilot run
-(\texttt{n\_reps\ =\ 15}, a subset of the design grid), not the
-production-scale run at \texttt{n\_reps\ =\ 1000} across the full grid;
-Morris et al.'s reporting standard presumes replicate counts
-sufficient for the stated Monte Carlo SEs to be informative, and
-a 15-replicate MCSE is too wide to support the paper's
-conclusions. See the \texttt{run-sim} chunk TODO in the Methods for the
-exact command to produce the production-scale run; the verdict
-above should be re-checked once that run completes.
+Table 6 Monte Carlo SE. The currently committed \texttt{sim\_09.rds} (and
+therefore every inline number, table, and figure in this
+document) is the production-scale run, \texttt{n\_reps\ =\ 1000} across the
+full 60-condition design grid, so the reported Monte Carlo SEs
+(about 0.7 percentage points for coverage, about 1.4-1.6
+percentage points for power in the least favorable cells) are
+informative at the precision Morris et al.'s reporting standard
+presumes. This production run also surfaced a second coding
+defect not visible in the pilot: \texttt{fit\_mmrm()} read the t
+statistic rather than the p-value from \texttt{mmrm}'s coefficient
+table (column 4 instead of column 5), which produced an MMRM
+Type I error near 0.50 in an initial production-scale attempt.
+The fix is regression-tested (\texttt{inst/tinytest/test\_basic.R}) and
+the run redone; see the \texttt{run-sim} chunk in the Methods for
+detail.
 
 \textbf{Audit-time gaps and their resolution:}
 
@@ -1071,8 +1093,9 @@ above should be re-checked once that run completes.
   \emph{MMRM total fit failure (M1)} --- Resolved: the covariance term
   in \texttt{fit\_mmrm()} is now the unqualified \texttt{us(visit\ \textbar{}\ id)} rather
   than the unrecognized \texttt{mmrm::us(visit\ \textbar{}\ id)}; convergence is
-  verified nonzero in the committed pilot run (see the tinytest
-  suite in \texttt{inst/tinytest/test\_basic.R} for a regression check).
+  verified nonzero (at least 0.998 in every reported cell) in the
+  production-scale run (see the tinytest suite in
+  \texttt{inst/tinytest/test\_basic.R} for a regression check).
 \item
   \emph{Estimand mismatch (M2)} --- Resolved in code and text via
   \texttt{truth\_for\_method()} and the corrected Estimands subsection.
@@ -1081,14 +1104,22 @@ above should be re-checked once that run completes.
   now part of the design grid and reported in the Type I error
   subsection.
 \item
-  \emph{Production-scale run not yet executed} --- Not resolved; see
-  the verdict above.
+  \emph{Production-scale run not yet executed} --- Resolved: the
+  committed \texttt{sim\_09.rds} is the \texttt{n\_reps\ =\ 1000} production run
+  over the full design grid.
+\item
+  \emph{MMRM p-value read from the wrong \texttt{mmrm::summary()} coefficient
+  column (found during the production-scale run)} --- Resolved:
+  \texttt{fit\_mmrm()} now reads \texttt{Pr(\textgreater{}\textbar{}t\textbar{})} (column 5) rather than
+  \texttt{t\ value} (column 4); regression-tested in
+  \texttt{inst/tinytest/test\_basic.R}.
 \end{itemize}
 
 Pilot runs use \texttt{N\_REPS=100} (or the smaller ad hoc pilot used to
 verify this remediation) for fast smoke-test rendering;
 production submission requires \texttt{N\_REPS=1000} (the default) over
-the full design grid.
+the full design grid, as used to generate the results reported
+in this document.
 
 \section*{References}\label{references}
 \addcontentsline{toc}{section}{References}

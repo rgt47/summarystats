@@ -255,3 +255,162 @@ newly written this session.
   checked in this session with a standalone brace-balance count,
   not a proper BibTeX/CSL parse. A malformed entry that still has
   balanced braces would not be caught by this check.
+
+## 4. Production-scale run completed (2026-08-20, second pass)
+
+*2026-08-20 23:42 PDT*
+
+This continues the session logged above, which deferred the
+production-scale simulation, the PDF render, and re-running
+tinytest. On resuming, the workspace's own state was inspected
+before trusting a claim (made outside this log) that the
+production run had already completed.
+
+- **The claimed completed production run was not real.**
+  `analysis/data/derived_data/rng_states/` held 60 sidecar files
+  (one per non-null-missingness design condition, matching the
+  30-condition x 2-delta grid), but every file contained exactly
+  50 RNG states, not 1000. `analysis/data/derived_data/sim_09.rds`
+  was still the original `n_reps = 15` pilot (72 rows, including
+  the duplicated zero-missingness MAR cells the M6 fix was
+  supposed to filter, confirming it predated that fix's grid).
+  `analysis/report/cache`'s `run-sim` cache entries were staged as
+  deleted in git, consistent with an interrupted or invalidated
+  run that never got as far as writing `sim_09.rds` or a fresh
+  cache. `[verified]` — read the RNG sidecar files' lengths and
+  the RDS contents directly.
+- **Production-scale run executed.** Cleared the stale 50-rep RNG
+  state directory and the invalidated `report/cache`, then ran
+  `N_REPS=1000 bash tools/render.sh analysis/report/report.Rmd`.
+  It completed cleanly (no errors/warnings other than a benign
+  LaTeX `!h` float-specifier notice) and produced 60 RNG sidecar
+  files with exactly 1000 states each, and `sim_09.rds` with
+  `n_reps = 1000`, `generated` timestamped at completion, and 180
+  rows (60 conditions x 3 methods). `[verified]`.
+- **New defect found by the production run, not visible in the
+  n_reps = 15 pilot: MMRM p-value read from the wrong
+  `mmrm::summary()` coefficient column.** The first production-
+  scale attempt completed with MMRM Type I error near 0.50 to 0.55
+  in every design condition at `delta = 0` (against a nominal
+  0.05), while MMRM's 95% CI coverage was correctly near 0.95 in
+  the same cells — an internally inconsistent pattern that a
+  correctly computed p-value/CI pair cannot produce. `fit_mmrm()`
+  in `analysis/scripts/sim_study.R` read `pval <- s[idx, 4]` from
+  `summary(mmrm_fit)$coefficients`; unlike the 4-column
+  `summary.lm()` output used elsewhere in this file (where column
+  4 is `Pr(>|t|)`), `mmrm`'s coefficient table has 5 columns
+  (`Estimate, Std. Error, df, t value, Pr(>|t|)`), so column 4 is
+  the t statistic, not the p-value. Testing `t < 0.05` rejects
+  roughly half the time under any null regardless of the true
+  effect, exactly matching the observed ~50% Type I error, and
+  independently confirmed by fitting `mmrm::mmrm()` directly on
+  synthetic data and inspecting `colnames(summary(fit)$coefficients)`.
+  Fixed to `pval <- s[idx, 5]`. This bug was undetected in the
+  n_reps = 15 pilot and in every prior review pass because the
+  pilot's headline table and text only report `delta = 0.25`
+  cells; the `delta = 0` (Type I error) cells were computed in the
+  pilot too but never inspected numerically against the nominal
+  rate in this much detail before now. `[verified]` — reproduced
+  the exact column-index confusion against live `mmrm::mmrm()`
+  output, applied the fix, and reran the full production
+  simulation, after which MMRM Type I error fell to 0.047-0.099
+  (nominal 0.05; the upper end at `n_per_arm = 30, p_visits = 8`
+  is a modest, plausible inflation attributable to Satterthwaite
+  small-sample behavior under an unstructured covariance with many
+  parameters relative to subjects, not a code defect) and MMRM
+  power at `delta = 0.25` moved from an artificially depressed
+  0.002-0.307 range to a range comparable to SMA-slope
+  (0.103-0.888 vs. 0.075-0.89).
+- **Regression test added.** `inst/tinytest/test_basic.R` gained
+  two assertions on `fit_mmrm()`'s `pval`: that it lies in
+  `[0, 1]` (a t statistic frequently does not), and that it is
+  `< 0.01` for a strong true effect (`delta = 0.25`,
+  `n_per_arm = 400`). Full suite: 20/20 pass (was 18/18 before
+  this addition). `[verified]` — ran
+  `Rscript -e 'pkgload::load_all("."); tinytest::run_test_dir("inst/tinytest")'`.
+- **Manuscript numbers updated to the real production output.**
+  `report.Rmd`'s inline `r`-computed statistics (headline bias/
+  power/coverage ranges, Type I error ranges, results tables,
+  power/coverage figures) recompute automatically from `results`
+  and needed no manual edits. Hand-written prose that referenced
+  the pilot explicitly was updated: the `run-sim` chunk's TODO
+  comment, the `headline-09` chunk's NOTE comment, the Type I
+  error paragraph's closing sentence (now describes the actual
+  achieved rates and the small-n/many-visit MMRM inflation),  the
+  Appendix ADEMP audit verdict (changed from "partially compliant"
+  to "compliant," with the second-pass MMRM p-value bug documented
+  as a new resolved item), and the closing "Pilot runs use..."
+  paragraph. `[verified]` — grepped the rendered `report.tex` for
+  `n_reps = 15` and "partially" after rendering; neither remains
+  outside historical/contextual mentions of the pilot.
+- **Missing "Reproducibility note" cross-reference fixed.** The
+  abstract's "Data and code availability" section referenced a
+  "Reproducibility note at the end of the Results section" that
+  did not exist anywhere in the document. Added a `## Reproducibility
+  note` subsection after the Figures and before the Discussion,
+  stating the seed, `n_reps`, output paths, and the render command.
+  `[verified]`.
+- **Full PDF render confirmed end to end.** `N_REPS=1000 bash
+  tools/render.sh analysis/report/report.Rmd` (rerun after the
+  text edits above, reusing the now-valid cached `run-sim` output)
+  produced `analysis/report/report.pdf` (17 pages) with no errors
+  and one benign LaTeX float-placement warning, and staged a
+  dated, git-versioned copy in `analysis/report/share/` per the
+  `tools/stamp-render.R` provenance mechanism. This is the first
+  confirmed successful full render of this manuscript in this
+  campaign. `[verified]`.
+
+### Did the production-scale numbers change any conclusions versus
+the pilot?
+
+- **Headline conclusion (bias, coverage, MMRM convergence at
+  `delta = 0.25`, complete MCAR data) is materially unchanged**:
+  all three methods recover their own estimand with small bias
+  (production max |bias| about 0.040 vs. the pilot's wider,
+  15-replicate estimate), MMRM converges in at least 99.8% of
+  replicates, and coverage is close to nominal 95% throughout.
+  `[verified]`.
+- **The Type I error / power numbers did change materially, but
+  because of the MMRM p-value bug fix, not because of scale
+  alone.** With `n_reps = 15` the pilot's power/Type I error
+  ranges were too noisy (MCSE up to about 12-13 percentage points)
+  to distinguish the ~50% MMRM Type I error from a wide but
+  plausible pilot estimate; the bug was invisible at pilot scale
+  by construction, not merely by chance. The corrected
+  production-scale run is the first point at which the manuscript's
+  MMRM operating characteristics are actually trustworthy: MMRM,
+  SMA-slope, and SMA-change now show broadly comparable Type I
+  error (all within about 5 percentage points of nominal 0.05) and
+  comparable power ranges at `delta = 0.25`, supporting the
+  manuscript's central thesis that summary statistics are
+  competitive with MMRM under the linear random-slope design
+  studied here. Had the bug not been caught, the document would
+  have shipped with a MMRM power/Type-I-error comparison that was
+  entirely artifactual.
+- **No change to the manuscript's qualitative thesis, scope
+  limitations, or Future research items.** The design remains
+  confined to the linear random-slope setting (no nonlinear
+  trajectory, covariance misspecification, or MNAR arms), as
+  already disclosed.
+
+### Outstanding / deferred after this pass
+
+- The MMRM Type I error inflation up to about 0.099 at
+  `n_per_arm = 30, p_visits = 8` is disclosed in the manuscript as
+  a plausible small-sample Satterthwaite/unstructured-covariance
+  effect but was not independently confirmed against a targeted
+  calibration check (e.g., a dedicated high-replicate run at that
+  one cell, or comparison against a Kenward-Roger df alternative).
+  `[inferred, unverified]`.
+- The m3 MAR-mechanism calibration check (flagged as deferred in
+  Section 2 above) was still not re-executed against the
+  production-scale run; the MAR dropout rate achieved at `n_reps =
+  1000` was not separately audited against the nominal `miss_rate`
+  in this pass.
+- `fit_sma_change_ttest()` remains untested and uncalled in the
+  main grid, as before.
+- No attempt was made to reduce the MMRM Type I error's mild
+  upper-range inflation (e.g., switching to Kenward-Roger df);
+  this is disclosed as an observation, not treated as a defect
+  requiring a code change, since it is consistent with known
+  small-sample MMRM behavior rather than a bug.
