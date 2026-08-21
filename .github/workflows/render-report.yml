@@ -1,4 +1,4 @@
-# zzcollab render-report.yml v0.1.0
+# zzcollab render-report.yml v0.3.0
 #
 # Tier 3 (render) for all zzcollab research compendia. Self-adapting: the
 # environment backend is detected at run time from artifact presence, so the
@@ -178,6 +178,42 @@ jobs:
                 quit(status = 1)
               }
             '
+
+      # --- Book archetype: render the whole Quarto book PROJECT (multi-chapter,
+      # driven by analysis/report/_quarto.yml), not a single report.Rmd. This is
+      # the render-gate generalisation the 'blog' archetype comment also flags:
+      # one project-level `quarto render` instead of per-file rmarkdown::render.
+      # Runs only when the book config exists. Container backend only for now,
+      # since the project image (publishing/verse base) ships quarto; extending
+      # to the nix and host backends requires quarto in those environments
+      # (plan §9.4 follow-up). The baked renv library is put on .libPaths() for
+      # the R sessions quarto spawns (which run outside the project root, in
+      # analysis/report/) via the Rprofile.site shim baked by modules/docker.sh.
+      - name: Render Quarto book (container)
+        if: steps.mode.outputs.backend == 'docker' && hashFiles('analysis/report/_quarto.yml') != ''
+        run: |
+          # Render HTML only. A book often declares an html+pdf format, but the
+          # PDF path pulls in LaTeX (luatex), which fails in CI on missing figure
+          # PDFs, fonts, or unbaked packages. The deploy serves HTML, so the
+          # render gate only needs HTML here. Build the PDF locally with
+          # `make docker-render-book`, which renders every declared format.
+          docker run --rm --user root -e CI=true \
+            -v ${{ github.workspace }}:/project \
+            -w /project compendium-env \
+            quarto render analysis/report --to html
+
+      # Blog archetype (and any Quarto index.qmd report): render the single-post
+      # Quarto document. Runs only when analysis/report/index.qmd exists, so
+      # manuscript/analysis projects that carry report.Rmd are unaffected. A
+      # book also has index.qmd (its preface), so skip when the book project
+      # config is present: the whole-book render above already covers it.
+      - name: Render Quarto report index.qmd (container)
+        if: steps.mode.outputs.backend == 'docker' && hashFiles('analysis/report/index.qmd') != '' && hashFiles('analysis/report/_quarto.yml') == ''
+        run: |
+          docker run --rm --user root -e CI=true \
+            -v ${{ github.workspace }}:/project \
+            -w /project compendium-env \
+            quarto render analysis/report/index.qmd --to html
 
       # --- Host render: no Dockerfile; renv pins packages when present ---
       - name: Set up pandoc
