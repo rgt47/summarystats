@@ -90,9 +90,9 @@ results object discussed here are version-controlled in the
 (\texttt{analysis/scripts/sim\_study.R},
 \texttt{analysis/report/report.Rmd},
 \texttt{analysis/data/derived\_data/sim\_09.rds}). No human
-subjects data are used; all data are simulated. See the
-Reproducibility note at the end of the Results section for the
-exact command to regenerate the simulation output.
+subjects data are used. All data are simulated. We note that
+the Reproducibility note at the end of the Results section
+gives the exact command to regenerate the simulation output.
 
 # Introduction
 
@@ -100,188 +100,194 @@ Mixed-model repeated measures (MMRM) has become the default
 analytic strategy for longitudinal clinical trials with
 continuous endpoints. Regulatory agencies and methodological
 guidance documents increasingly endorse MMRM as the primary
-analysis [@ichE9R12019], and the approach has clear theoretical
-advantages: it uses all available data under the missing-at-random
-(MAR) assumption, accommodates unbalanced designs, and models
-complex within-subject correlation structures
-[@lairdRandomEffectsModels1982].
+analysis [@ichE9R12019]. The approach has clear theoretical
+advantages. It uses all available data under the
+missing-at-random (MAR) assumption, it accommodates unbalanced
+designs, and it models complex within-subject correlation
+structures [@lairdRandomEffectsModels1982].
 
 Yet MMRM carries substantial practical burdens. The method
 requires specification of a covariance structure, and
 misspecification can inflate Type I error or reduce power
 [@vossoughiSummaryMeasureAnalysis2012]. Degrees-of-freedom
 approximations (Satterthwaite versus Kenward-Roger) remain
-unsettled, with different software implementations yielding
+unsettled. Different software implementations yield
 discrepant p-values for the same data
 [@kenwardSmallSampleInference1997; @mmrmPackage2024].
 Convergence failures are common in R packages when fitting
 unstructured covariance matrices, particularly with small
-samples or many time points. And perhaps most critically, the
+samples or many time points. Perhaps most critically, the
 MMRM treatment effect estimate at a single visit is not always
 intuitive to clinical investigators, who may prefer a single,
 interpretable summary of each patient's response trajectory.
 
-An older and simpler tradition, the summary measures
-approach, offers a compelling alternative. First articulated
-systematically by @matthewsAnalysisSerialMeasurements1990,
-this two-stage method reduces each subject's repeated
-measurements to a single scalar summary (e.g., a slope, area
-under the curve, post-treatment mean, or change score) and
-then applies standard between-group tests (t-tests, ANCOVA)
-to these summaries. The approach requires no covariance
-structure specification, yields exact p-values from
-well-understood distributions, and produces treatment effect
-estimates that are directly interpretable.
+An older and somewhat simpler tradition, the summary measures
+approach, offers a compelling alternative. It was first
+articulated systematically by
+@matthewsAnalysisSerialMeasurements1990. This two-stage method
+reduces each subject's repeated measurements to a single
+scalar summary (for example, a slope, an area under the
+curve, a post-treatment mean, or a change score) and then
+applies standard between-group tests (t-tests, ANCOVA) to
+these summaries. The approach requires no covariance structure
+specification. It yields exact p-values from well-understood
+distributions and produces treatment effect estimates that
+are directly interpretable.
 
 We ask whether there exist clinical trial settings in which
-summary statistic-based inference is as effective as or superior
-to MMRM, and what those settings look like.
+summary statistic-based inference is as effective as, or
+superior to, MMRM, and what those settings look like.
 
 ## The summary measures tradition
 
 The intellectual history of summary measures in clinical trials
-spans three decades. @matthewsAnalysisSerialMeasurements1990
-introduced the two-stage framework in the BMJ, arguing that the
+spans three decades. We begin with
+@matthewsAnalysisSerialMeasurements1990, who introduced the
+two-stage framework in the BMJ. They argued that the
 then-common practice of testing group differences at each time
-point was both statistically invalid (due to multiplicity) and
-clinically uninformative. They proposed that investigators first
-identify a summary that captures the clinically relevant feature
-of each patient's trajectory, then analyze these summaries with
-simple methods. The approach is statistically valid because the
-summaries, being one per subject, are independent across
-subjects.
+point was statistically invalid, owing to multiplicity, and
+clinically uninformative. They proposed that investigators
+first identify a summary that captures the clinically relevant
+feature of each patient's trajectory, then analyze these
+summaries with simple methods. The approach is statistically
+valid because the summaries, being one per subject, are
+independent across subjects.
 
 @frisonRepeatedMeasuresClinical1992 extended this framework
-substantially by demonstrating that when the data can be
+substantially. They demonstrated that when the data can be
 summarized by pre-treatment and post-treatment means, analysis
-of covariance (ANCOVA) of the post-treatment means adjusted for
-the pre-treatment means is the method of choice. They quantified
-the superiority of ANCOVA over analysis of post-treatment means
-alone and over analysis of change scores, showing that ANCOVA
-dominates both in terms of reduced variance and avoidance of
-bias. Importantly, they showed that having more than one
+of covariance (ANCOVA) of the post-treatment means, adjusted
+for the pre-treatment means, is the method of choice. They
+quantified the superiority of ANCOVA over analysis of
+post-treatment means alone and over analysis of change scores.
+ANCOVA dominates both alternatives in terms of reduced variance
+and avoidance of bias. We note that having more than one
 pre-treatment measurement provides meaningful gains in
 precision, because the pre-treatment mean is a better estimate
 of the true baseline than a single observation.
 
 @frisonLinearlyDivergentTreatment1997 addressed the case where
-treatment effects diverge linearly over time. For this setting,
-the natural summary statistic is each subject's regression slope,
-and the authors showed that adjusting slopes for baseline values
-(or better, for estimated intercepts) yields substantial
-efficiency gains. They derived the optimal linear summary
-statistic for any repeated measures design with known covariance
-structure and known shape of the mean treatment difference,
-demonstrating that the summary measures approach can be made
-nearly fully efficient.
+treatment effects diverge linearly over time. For this
+setting, the natural summary statistic is each subject's
+regression slope. The authors showed that adjusting slopes for
+baseline values, or better, for estimated intercepts, yields
+substantial efficiency gains. They derived the optimal linear
+summary statistic for any repeated measures design with known
+covariance structure and known shape of the mean treatment
+difference, demonstrating that the summary measures approach
+can be made nearly fully efficient.
 
 @sennRepeatedMeasuresClinical2000 provided a practical
-synthesis, arguing that much repeated measures analysis using
-mixed models could be replaced by a summary measures approach
-with negligible loss of efficiency. Senn and colleagues described
-strategies for baseline adjustment with multiple baselines and
-proposed a compromise trend/mean measure (regression through the
-origin) useful when both the level and rate of change matter.
-They also made the provocative observation that some repeated
-measures approaches implicitly violate intention-to-treat
-principles, a problem that summary measures avoid.
+synthesis. They argued that much repeated measures analysis
+using mixed models could be replaced by a summary measures
+approach with negligible loss of efficiency. Senn and
+colleagues described strategies for baseline adjustment with
+multiple baselines and proposed a compromise trend and mean
+measure (regression through the origin), useful when both the
+level and the rate of change matter. They also made the
+provocative observation that some repeated measures approaches
+implicitly violate intention-to-treat principles, a problem
+that summary measures avoid.
 
 ## Extensions and refinements
 
 @dawsonStratificationSummaryStatistic1994 recognized that
 summary statistic distributions depend on the pattern of
-missingness and proposed stratifying summary statistic tests
-by missing data pattern. Simulations showed that stratification
-increases power and improves robustness to violations of
-missing data assumptions. @dawsonSampleSizeCalculations1998
-later provided a unified sample size framework for summary
-statistics, covering slopes, post-baseline means, change
-scores, and final observations, with modifications for missing
-data from staggered entry and random dropouts.
+missingness. They proposed stratifying summary statistic tests
+by missing data pattern. Their simulations showed that
+stratification increases power and improves robustness to
+violations of missing data assumptions.
+@dawsonSampleSizeCalculations1998 later provided a unified
+sample size framework for summary statistics, covering slopes,
+post-baseline means, change scores, and final observations,
+with modifications for missing data from staggered entry and
+random dropouts.
 
 @weinbergEfficiencyComparisonsRank2001 examined the efficiency
-of rank and permutation tests based on summary statistics under
-more complex distributional assumptions, including censored
-laboratory markers. Their work demonstrated that the choice of
-summary statistic can substantially affect asymptotic relative
-efficiency, particularly when the repeated measures exhibit
-nonlinear growth or left censoring.
+of rank and permutation tests based on summary statistics
+under more complex distributional assumptions, including
+censored laboratory markers. Their work demonstrated that the
+choice of summary statistic can substantially affect asymptotic
+relative efficiency, particularly when the repeated measures
+exhibit nonlinear growth or left censoring.
 
 @sennChangeBaselineAnalysis2006 revisited the choice between
 ANCOVA and change-score analysis, clarifying persistent
 confusion in the literature. Senn argued that ANCOVA is
-generally preferable for randomized trials because it adjusts
+generally preferable for randomized trials, because it adjusts
 for chance imbalances in baseline values without introducing
-the bias that afflicts change-score analysis in non-randomized
-settings.
+the bias that afflicts change-score analysis in
+non-randomized settings.
 
 ## MMRM: strengths and practical limitations
 
-The theoretical foundation for MMRM rests on the random-effects
-model of @lairdRandomEffectsModels1982, developed further in the
-two-stage random-effects lineage summarized by
-@fitzmauriceAppliedLongitudinalAnalysis2011, which provides
-maximum likelihood and restricted maximum likelihood (REML)
-estimation for models with structured covariance. The key
-practical advantage is that MMRM uses all available data,
-providing valid inference under MAR without requiring
-imputation. The DIA/PhRMA working group formalized MMRM as the
-recommended primary analysis for continuous longitudinal
-endpoints
-[@mallinckrodtRecommendationsPrimaryAnalysis2008], and
-@siddiquiMMRMLOCFComparison2009 compared MMRM against LOCF-ANCOVA
-across 25 New Drug Application datasets, reinforcing the
-regulatory lineage that led to MMRM's current default status.
+The theoretical foundation for MMRM rests on the
+random-effects model of @lairdRandomEffectsModels1982,
+developed further in the two-stage random-effects lineage
+summarized by @fitzmauriceAppliedLongitudinalAnalysis2011,
+which provides maximum likelihood and restricted maximum
+likelihood (REML) estimation for models with structured
+covariance. The key practical advantage is that MMRM uses all
+available data, providing valid inference under MAR without
+requiring imputation. The DIA/PhRMA working group formalized
+MMRM as the recommended primary analysis for continuous
+longitudinal endpoints
+[@mallinckrodtRecommendationsPrimaryAnalysis2008].
+@siddiquiMMRMLOCFComparison2009 compared MMRM against
+LOCF-ANCOVA across 25 New Drug Application datasets,
+reinforcing the regulatory lineage that led to MMRM's current
+default status.
 
 @mallinckrodtEfficacyDuloxetine2004 provided an influential
 empirical comparison of MMRM and LOCF-ANCOVA across eight
-duloxetine trials. While MMRM and LOCF agreed on significance
-in 82\% of 202 comparisons, MMRM yielded significant results
+duloxetine trials. MMRM and LOCF agreed on significance in
+82\% of 202 comparisons, but MMRM yielded significant results
 in 12.4\% of cases where LOCF did not. This work cemented
-MMRM's position as the preferred analysis but also revealed
-that the two approaches diverge substantively in a non-trivial
-minority of cases.
+MMRM's position as the preferred analysis, but it also
+revealed that the two approaches diverge substantively in a
+non-trivial minority of cases.
 
-However, MMRM faces several practical limitations that
-merit mention:
+MMRM, however, faces several practical limitations that
+warrant mention:
 
 \begin{enumerate}
 \item \textbf{Degrees-of-freedom approximations.}
   @kenwardSmallSampleInference1997 proposed a scaled Wald
   statistic with an $F$ approximation that reduces
-  small-sample bias, but the Kenward-Roger adjustment depends
-  on the parameterization of the covariance model, producing
-  different results across software implementations. The
-  alternative Satterthwaite approximation is computationally
-  simpler but can be liberal in small samples. Neither method
-  has a clear theoretical advantage in all settings.
+  small-sample bias. The Kenward-Roger adjustment, however,
+  depends on the parameterization of the covariance model,
+  which produces different results across software
+  implementations. The alternative Satterthwaite approximation
+  is computationally simpler, but it can be liberal in small
+  samples. Neither method has a clear theoretical advantage in
+  all settings.
 
 \item \textbf{Software fragmentation.} SAS \texttt{PROC MIXED}
-  has long been the reference implementation, but R packages
+  has long been the reference implementation. R packages
   (\texttt{nlme}, \texttt{lme4}/\texttt{lmerTest},
-  \texttt{glmmTMB}) have exhibited convergence problems,
-  particularly with unstructured covariance matrices. The
-  \texttt{mmrm} package [@mmrmPackage2024] was developed
-  specifically to address these gaps, but discrepancies
-  between SAS and R results persist due to different
-  parameterizations.
+  \texttt{glmmTMB}), on the other hand, have exhibited
+  convergence problems, particularly with unstructured
+  covariance matrices. The \texttt{mmrm} package
+  [@mmrmPackage2024] was developed specifically to address
+  these gaps, but discrepancies between SAS and R results
+  persist because of different parameterizations.
 
 \item \textbf{Covariance structure specification.}
   @vossoughiSummaryMeasureAnalysis2012 showed that
   misspecification of the error covariance structure in LMM
   can produce non-sensible results, whereas the summary
-  measure approach is robust to the true covariance structure.
-  In practice, analysts often default to unstructured
-  covariance, but this requires estimation of $p(p+1)/2$
-  parameters for $p$ time points, which may exceed the
-  information in the data.
+  measure approach is robust to the true covariance
+  structure. In practice, analysts often default to
+  unstructured covariance. This choice requires estimation of
+  $p(p+1)/2$ parameters for $p$ time points, which may exceed
+  the information in the data.
 
 \item \textbf{Interpretability.} The MMRM treatment effect at
-  a specific visit (e.g., week 24) is a conditional quantity
-  that depends on the covariance model. The analogous summary
-  statistic (e.g., slope difference) has a direct clinical
-  interpretation: how much faster does the treatment group
-  improve per unit time?
+  a specific visit (for example, week 24) is a conditional
+  quantity that depends on the covariance model. The analogous
+  summary statistic (for example, a slope difference) has a
+  direct clinical interpretation: how much faster does the
+  treatment group improve per unit time?
 
 \item \textbf{Time-by-covariate interactions.}
   @liuMixedModelsCovariateInteractions2021 demonstrated that
@@ -293,37 +299,38 @@ merit mention:
 
 ## When are summary statistics adequate?
 
-The performance comparison literature provides guidance on when
-summary statistics match or exceed MMRM.
+The performance comparison literature provides guidance on
+when summary statistics match or exceed MMRM.
 @vossoughiSummaryMeasureAnalysis2012 conducted extensive Monte
-Carlo simulations comparing the summary measure approach (SMA),
-linear mixed models (LMM), and the unstructured multivariate
-approach (UMA) for linear trend data. They found that SMA
-completely dominated UMA and performed ``convincingly close''
-to the best-fitting LMM in testing all effects. Critically,
-when the LMM covariance structure was misspecified, the LMM
-produced unreliable results, while SMA remained robust. They
-concluded that SMA is ``a simple, safe and powerful approach in
-which the loss of efficiency compared to the best-fitting LMM
-was generally negligible'' and recommended it as ``the first
-choice to reliably analyse the linear trend data with a
-moderate to large number of measurements and/or small to
-moderate sample sizes.''
+Carlo simulations comparing the summary measure approach
+(SMA), linear mixed models (LMM), and the unstructured
+multivariate approach (UMA) for linear trend data. They found
+that SMA completely dominated UMA and performed ``convincingly
+close'' to the best-fitting LMM in testing all effects. We
+note that, critically, when the LMM covariance structure was
+misspecified, the LMM produced unreliable results while SMA
+remained robust. They concluded that SMA is ``a simple, safe
+and powerful approach in which the loss of efficiency compared
+to the best-fitting LMM was generally negligible'' and
+recommended it as ``the first choice to reliably analyse the
+linear trend data with a moderate to large number of
+measurements and/or small to moderate sample sizes.''
 
 In the Alzheimer's disease trial literature,
-@ardMixedModelRepeated2011 compared MMRM with slope models
-for cognitive outcomes and found that slope models provide a
+@ardMixedModelRepeated2011 compared MMRM with slope models for
+cognitive outcomes. They found that slope models provide a
 more intuitive and clinically meaningful way of demonstrating
 disease-modifying effects. @ardSimulationStudyComparing2015
 followed with a simulation study showing that both methods
 maintain proper Type I error, but the slope model has a
 moderate power advantage when the true progression is linear
-or near-linear. When disease progression is nonlinear, MMRM
-with its semiparametric treatment of time retains an advantage.
+or near-linear. When disease progression is nonlinear, on the
+other hand, MMRM retains an advantage through its
+semiparametric treatment of time.
 
-Based on the theoretical and empirical literature, summary
-statistics appear to be as effective as MMRM in the following
-settings:
+Based on the theoretical and empirical literature, it appears
+that summary statistics are as effective as MMRM in the
+following settings:
 
 \begin{itemize}
 \item Treatment effects are expected to diverge linearly or
@@ -344,36 +351,37 @@ settings:
 
 ## Present study
 
-Our objectives are threefold: (1) to synthesize the
-theoretical and empirical literature comparing summary statistic
-and MMRM approaches; (2) to identify specific clinical trial
-design features that favor summary statistics; and (3) to
-conduct a simulation study comparing the operating
-characteristics of summary statistic-based ANCOVA and MMRM
-across a range of design parameters relevant to clinical
-practice. The simulation reported here is confined to the
-linear random-slope generating model under which the near-
-efficiency of adjusted slope summaries relative to MMRM is
-already established
+Our objectives are threefold. We aim, first, to synthesize the
+theoretical and empirical literature comparing summary
+statistic and MMRM approaches. Second, we aim to identify
+specific clinical trial design features that favor summary
+statistics. Third, we conduct a simulation study comparing the
+operating characteristics of summary statistic-based ANCOVA
+and MMRM across a range of design parameters relevant to
+clinical practice. The simulation reported here is confined to
+the linear random-slope generating model, under which the
+near-efficiency of adjusted slope summaries relative to MMRM
+is already established
 [@frisonLinearlyDivergentTreatment1997;
 @vossoughiSummaryMeasureAnalysis2012;
-@ardSimulationStudyComparing2015]; it is not offered as a novel
-head-to-head methods comparison, since that ground is already
-occupied by prior simulation work, and does not vary covariance
-misspecification, nonlinear trajectories, or MNAR dropout (see
-Future research). Its contribution is instead to verify, under a
-single well-understood setting, that the operating
-characteristics behave as the theory predicts once the
-comparison is estimand-correct (see Estimands below), and to
-motivate the decision-guidance case for summary statistics under
-the ICH E9(R1) estimands framework developed in the Discussion.
+@ardSimulationStudyComparing2015]. It is not offered as a
+novel head-to-head methods comparison, since that ground is
+already occupied by prior simulation work, and it does not
+vary covariance misspecification, nonlinear trajectories, or
+MNAR dropout (see Future research). Its contribution is
+instead to verify, under a single well-understood setting,
+that the operating characteristics behave as the theory
+predicts once the comparison is estimand-correct (see
+Estimands below), and to motivate the decision-guidance case
+for summary statistics under the ICH E9(R1) estimands
+framework developed in the Discussion.
 
 # Methods
 
 ## ADEMP structure
 
-Following Morris, White, and Crowther [-@morris2019using], the
-simulation is reported under the ADEMP framework.
+We report the simulation under the ADEMP framework, following
+Morris, White, and Crowther [-@morris2019using].
 
 - **Aims.** Quantify bias, precision, coverage, power, and Type I
   error of summary-statistic-based ANCOVA procedures (slope and
@@ -382,22 +390,23 @@ simulation is reported under the ADEMP framework.
 - **Data-generating mechanism.** Linear mixed model with random
   intercepts and slopes; details in the next subsection.
 - **Estimands.** The three methods target three different
-  functionals of the same generating model, and each is scored
-  against its own true value rather than a single shared
-  quantity (this replaces an earlier version of this manuscript
-  that incorrectly scored all three methods against a single
-  $\delta$; see the Discussion note on this correction). SMA-slope
-  estimates the treatment effect on the per-unit-time slope,
-  $\delta$. MMRM is fit with time entered continuously in the
-  fixed-effects formula (`trt * time`, alongside the categorical
-  `visit` grouping for the unstructured covariance), so its
-  `trt:time` coefficient targets the same slope estimand,
-  $\delta$, directly comparable to SMA-slope without a covariance-
-  model-dependent visit contrast. SMA-change estimates the
+  functionals of the same generating model. We note that each
+  is scored against its own true value rather than a single
+  shared quantity (this replaces an earlier version of this
+  manuscript that incorrectly scored all three methods against
+  a single $\delta$; see the Discussion note on this
+  correction). SMA-slope estimates the treatment effect on the
+  per-unit-time slope, $\delta$. MMRM is fit with time entered
+  continuously in the fixed-effects formula (`trt * time`,
+  alongside the categorical `visit` grouping for the
+  unstructured covariance). Its `trt:time` coefficient
+  therefore targets the same slope estimand, $\delta$, directly
+  comparable to SMA-slope without a covariance-model-dependent
+  visit contrast. SMA-change, by contrast, estimates the
   difference in mean post-baseline change from baseline, which
-  under linear divergence equals $\delta \cdot (p + 1) / 2$ (the
-  average of $\delta t$ over $t = 1, \dots, p$), not $\delta$
-  itself.
+  under linear divergence equals $\delta \cdot (p + 1) / 2$
+  (the average of $\delta t$ over $t = 1, \dots, p$), not
+  $\delta$ itself.
 - **Methods.** SMA-slope, SMA-change, and MMRM (see Design
   specifications).
 - **Performance measures.** Bias, empirical SE, model-based SE, MSE,
@@ -408,22 +417,22 @@ simulation is reported under the ADEMP framework.
 
 ## Data generating model
 
-We consider a two-arm parallel-group randomized trial with
-$n$ subjects per arm, one baseline measurement, and $p$
-post-baseline visits at equally spaced intervals.
-The response for subject $i$ in treatment group $g$
-at time $t_j$ is generated as:
+We consider a two-arm parallel-group randomized trial with $n$
+subjects per arm, one baseline measurement, and $p$
+post-baseline visits at equally spaced intervals. The response
+for subject $i$ in treatment group $g$ at time $t_j$ is
+generated as follows.
 
 $$Y_{igj} = \beta_0 + b_{0i} + (\beta_1 + b_{1i}) t_j
   + \delta_g \cdot t_j + \epsilon_{igj}$$
 
-where $\beta_0$ is the overall intercept, $b_{0i} \sim
+Here $\beta_0$ is the overall intercept, $b_{0i} \sim
 N(0, \sigma^2_{b0})$ is the random intercept, $\beta_1$ is
 the overall slope, $b_{1i} \sim N(0, \sigma^2_{b1})$ is the
 random slope, $\delta_g$ is the treatment effect on the slope
 ($\delta_0 = 0$ for placebo), and $\epsilon_{igj} \sim
-N(0, \sigma^2_\epsilon)$ is residual error. Random effects
-are assumed independent of residual errors, and
+N(0, \sigma^2_\epsilon)$ is residual error. We assume random
+effects are independent of residual errors, with
 $\text{Cor}(b_{0i}, b_{1i}) = \rho_{01}$.
 
 ## Parameter values
@@ -466,7 +475,7 @@ kable(
 
 ## Design specifications
 
-We compare three analytic approaches:
+We compare three analytic approaches.
 
 \begin{enumerate}
 \item \textbf{Slope summary + ANCOVA (SMA-slope).}
@@ -479,26 +488,27 @@ We compare three analytic approaches:
   For each subject, compute the mean of all post-baseline
   measurements minus the baseline measurement. The primary
   three-way comparison reported here uses ANCOVA with baseline
-  adjustment (\texttt{fit\_sma\_change()}); an unadjusted
-  two-sample t-test on the same change score is also implemented
-  (\texttt{fit\_sma\_change\_ttest()}) but is not included in the
-  main simulation grid, so that all three headline methods share
-  a baseline-adjusted design. The t-test variant is available for
-  sensitivity analyses.
+  adjustment (\texttt{fit\_sma\_change()}). An unadjusted
+  two-sample t-test on the same change score is also
+  implemented (\texttt{fit\_sma\_change\_ttest()}), but it is
+  not included in the main simulation grid, so that all three
+  headline methods share a baseline-adjusted design. The
+  t-test variant is available for sensitivity analyses.
 
-\item \textbf{MMRM.} Fit a mixed-effects model with fixed
+\item \textbf{MMRM.} We fit a mixed-effects model with fixed
   effects for treatment, time (entered continuously, not as a
-  visit factor, so the \texttt{trt:time} coefficient is a
+  visit factor, so that the \texttt{trt:time} coefficient is a
   per-unit-time slope effect directly comparable to the
   SMA-slope estimand), and baseline as covariate, with an
   unstructured covariance over the categorical visit factor
   (\texttt{y \textasciitilde{} trt * time + baseline\_y +
-  us(visit | id)}) and Satterthwaite degrees of freedom. The
-  covariance term must be unqualified (\texttt{us(...)}, not
-  \texttt{mmrm::us(...)}); the namespace-qualified form is not
-  recognized by the \texttt{mmrm} formula parser and fails
-  silently under \texttt{tryCatch}, which is why every MMRM fit
-  failed in an earlier version of this simulation.
+  us(visit | id)}) and Satterthwaite degrees of freedom. We
+  note that the covariance term must be unqualified
+  (\texttt{us(...)}, not \texttt{mmrm::us(...)}); the
+  namespace-qualified form is not recognized by the
+  \texttt{mmrm} formula parser and fails silently under
+  \texttt{tryCatch}. This is why every MMRM fit failed in an
+  earlier version of this simulation.
 \end{enumerate}
 
 ## Missing data mechanism
@@ -516,21 +526,23 @@ Missing data are generated under two mechanisms:
   under independent per-visit dropout risk, then scaled by an
   empirically calibrated factor (Monte Carlo check over the
   design grid, 60 replicates per cell) to correct for the
-  systematic downward bias the informative (response-dependent)
-  perturbation introduces under the logistic link. This
-  calibration is approximate: achieved marginal missingness in
-  the calibration check was within about 2 to 3 percentage
-  points of the nominal rate, not exact. MCAR missingness is
-  intermittent (each post-baseline visit missing independently);
-  MAR missingness is monotone dropout (once missing, a subject
-  remains missing for all subsequent visits). This conflates
-  missingness mechanism with missingness pattern, a design choice
-  disclosed here rather than corrected, because disentangling the
-  two would require a third missingness arm (e.g., intermittent
-  MAR) that the current design does not include.
-  Zero-percent missingness is run once per $(n, p)$ cell, not
-  once per mechanism, because MCAR and MAR are identical when the
-  missingness rate is zero; the design grid therefore has
+  systematic downward bias that the informative
+  (response-dependent) perturbation introduces under the
+  logistic link. We note that this calibration is approximate:
+  achieved marginal missingness in the calibration check was
+  within about 2 to 3 percentage points of the nominal rate,
+  not exact. MCAR missingness is intermittent, meaning each
+  post-baseline visit is missing independently. MAR
+  missingness, by contrast, is monotone dropout: once missing,
+  a subject remains missing for all subsequent visits. This
+  conflates missingness mechanism with missingness pattern, a
+  design choice we disclose here rather than correct, because
+  disentangling the two would require a third missingness arm
+  (for example, intermittent MAR) that the current design does
+  not include. Zero-percent missingness is run once per
+  $(n, p)$ cell, not once per mechanism, because MCAR and MAR
+  are identical when the missingness rate is zero. The design
+  grid therefore has
   $3 \times 2 \times (1 + 2 \times 2) = 30$ non-null-missingness
   conditions rather than $3 \times 2 \times 3 \times 2 = 36$.
 
@@ -636,17 +648,19 @@ saveRDS(
 ```
 
 For each of the `r nrow(design_grid)` design conditions (3 arm
-sizes x 2 visit counts x missing-data rate/mechanism combinations,
-deduplicated at 0\% missingness, x 2 effect sizes including the
-null) and each of `r n_reps` replications, we record the point
-estimate of the treatment effect, its standard error, the
-p-value, and whether the 95\% confidence interval covers the
-true value for that method (see Estimands). Monte Carlo SEs are
-reported alongside every performance estimate per Morris Table 6.
-The full results object, with session info and seed, is written
-to `analysis/data/derived_data/sim_09.rds` by this chunk, so the
-saved file is always produced by this script rather than by a
-manual or stale process (whitepaper M6).
+sizes by 2 visit counts by missing-data rate and mechanism
+combinations, deduplicated at 0\% missingness, by 2 effect
+sizes including the null) and each of `r n_reps` replications,
+we record the point estimate of the treatment effect, its
+standard error, the p-value, and whether the 95\% confidence
+interval covers the true value for that method (see
+Estimands). Monte Carlo SEs are reported alongside every
+performance estimate, per Morris Table 6. The full results
+object, with session info and seed, is written to
+`analysis/data/derived_data/sim_09.rds` by this chunk. We note
+that the saved file is therefore always produced by this
+script rather than by a manual or stale process
+(whitepaper M6).
 
 ## Performance metrics
 
@@ -696,11 +710,11 @@ t1e <- results |>
   )
 ```
 
-We observe that under complete data (MCAR, 0\% missing) at the
-nonzero design effect ($\delta = 0.25$), all three analytic
-procedures (SMA-slope, SMA-change, MMRM) recovered their own
-estimand (see Estimands: $\delta$ for SMA-slope and MMRM,
-$\delta \cdot (p+1)/2$ for SMA-change) with bias below
+We observe that under complete data (MCAR, 0\% missing) at
+the nonzero design effect ($\delta = 0.25$), all three
+analytic procedures (SMA-slope, SMA-change, MMRM) recovered
+their own estimand (see Estimands: $\delta$ for SMA-slope and
+MMRM, $\delta \cdot (p+1)/2$ for SMA-change) with bias below
 `r sprintf('%.3f', max(abs(hl_complete$bias), na.rm = TRUE))`
 and empirical SE in
 [`r sprintf('%.3f', min(hl_complete$emp_se, na.rm = TRUE))`,
@@ -714,16 +728,16 @@ observed, against each method's own estimand, was
 $n_{\mathrm{arm}} = `r hl_worst_bias$n_per_arm`$,
 `r sprintf('%.0f%%', 100 * hl_worst_bias$miss_rate)`
 missing,
-`r hl_worst_bias$miss_mech` mechanism. Power at $\delta = 0.25$
-ranged from
+`r hl_worst_bias$miss_mech` mechanism. Power at
+$\delta = 0.25$ ranged from
 `r sprintf('%.2f', min(pow_range$pow_min))` to
-`r sprintf('%.2f', max(pow_range$pow_max))` depending on
+`r sprintf('%.2f', max(pow_range$pow_max))`, depending on
 method and design condition. MMRM convergence was at least
-`r sprintf('%.3f', hl_mmrm_conv$conv_min)` in every
-condition examined (the `run-sim` chunk stops the render if
-convergence falls below 0.5 in any cell). Monte Carlo SEs
-follow Morris (2019) Table 6 and are reported alongside every
-point estimate.
+`r sprintf('%.3f', hl_mmrm_conv$conv_min)` in every condition
+examined (the `run-sim` chunk stops the render if convergence
+falls below 0.5 in any cell). Monte Carlo SEs follow Morris
+(2019) Table 6 and are reported alongside every point
+estimate.
 
 ## Type I error
 
@@ -738,16 +752,17 @@ SMA-change from
 and MMRM from
 `r sprintf('%.3f', t1e$t1e_min[t1e$method == "MMRM"])` to
 `r sprintf('%.3f', t1e$t1e_max[t1e$method == "MMRM"])`. These
-ranges are computed from the production-scale run (`n_reps = `r
-n_reps``) and carry the Monte Carlo SEs reported alongside every
-point estimate in the derived-data object. The SMA methods are
-slightly conservative relative to nominal 0.05 throughout; MMRM
-is close to nominal in most conditions but modestly inflated
-(up to about 0.10) in the smallest-arm-size, most-visits
-condition ($n_{\mathrm{arm}} = 30$, $p = 8$), consistent with
-known small-sample behavior of Satterthwaite degrees of freedom
-under an unstructured covariance with many parameters relative
-to the number of subjects.
+ranges are computed from the production-scale run
+(`n_reps = `r n_reps``) and carry the Monte Carlo SEs reported
+alongside every point estimate in the derived-data object. We
+note that the SMA methods are slightly conservative relative
+to nominal 0.05 throughout. MMRM, on the other hand, is close
+to nominal in most conditions but modestly inflated (up to
+about 0.10) in the smallest-arm-size, most-visits condition
+($n_{\mathrm{arm}} = 30$, $p = 8$). This is consistent with
+known small-sample behavior of Satterthwaite degrees of
+freedom under an unstructured covariance with many parameters
+relative to the number of subjects.
 
 ## Summary statistics
 
@@ -798,12 +813,13 @@ results |>
   )
 ```
 
-The MAR table above addresses the earlier version of this
-manuscript's gap in which missing-data results were deferred
+The MAR table above addresses a gap in the earlier version of
+this manuscript, in which missing-data results were deferred
 entirely to the derived-data RDS rather than shown in the
-document (whitepaper m10); the remaining MCAR partial-missingness
-cells and the full $\delta = 0$ grid are still deferred to
-`analysis/data/derived_data/sim_09.rds` for space.
+document (whitepaper m10). We note that the remaining MCAR
+partial-missingness cells and the full $\delta = 0$ grid are
+still deferred to `analysis/data/derived_data/sim_09.rds`, for
+space.
 
 ## Figures
 
@@ -891,32 +907,34 @@ replications per design condition, seed `20260310`
 (`RNGkind("L'Ecuyer-CMRG")`), writing
 `analysis/data/derived_data/sim_09.rds` and per-condition RNG
 state sidecars under `analysis/data/derived_data/rng_states/`.
-To reproduce this run, set `N_REPS=1000` in the environment and
-render via `bash tools/render.sh analysis/report/report.Rmd` (or
+To reproduce this run, set `N_REPS=1000` in the environment
+and render via `bash tools/render.sh analysis/report/report.Rmd`
+(or
 `N_REPS=1000 Rscript -e "rmarkdown::render('analysis/report/report.Rmd')"`
-if the render wrapper is unavailable); a full run over the design
-grid takes on the order of an hour or more.
+if the render wrapper is unavailable). A full run over the
+design grid takes on the order of an hour or more.
 
 # Discussion
 
 **A note on the estimand correction.** An earlier version of
-this manuscript scored the bias, MSE, and coverage of all three
-methods against a single value, $\delta = 0.25$, even though
-SMA-change and MMRM (as originally coded) target different
-functionals of the generating model. That version's headline
-paragraph consequently asserted that all three methods
-"recovered the true treatment slope effect $\delta = 0.25$"
-while its own results table showed SMA-change bias as large as
-0.9, a self-contradiction. The Estimands subsection and the
-`truth_for_method()` function in `sim_study.R` now define and
-score each method against its own true value: $\delta$ for
-SMA-slope and for MMRM (which is fit with continuous time so its
-`trt:time` coefficient targets $\delta$ directly, rather than a
-covariance-model-dependent visit-specific contrast), and
-$\delta \cdot (p+1)/2$ for SMA-change. This does not change which
+this manuscript scored the bias, MSE, and coverage of all
+three methods against a single value, $\delta = 0.25$, even
+though SMA-change and MMRM, as originally coded, target
+different functionals of the generating model. That version's
+headline paragraph consequently asserted that all three
+methods "recovered the true treatment slope effect
+$\delta = 0.25$," while its own results table showed
+SMA-change bias as large as 0.9, a self-contradiction. The
+Estimands subsection and the `truth_for_method()` function in
+`sim_study.R` now define and score each method against its own
+true value: $\delta$ for SMA-slope and for MMRM (which is fit
+with continuous time, so its `trt:time` coefficient targets
+$\delta$ directly, rather than a covariance-model-dependent
+visit-specific contrast), and $\delta \cdot (p+1)/2$ for
+SMA-change. We note that this correction does not change which
 method has the best operating characteristics under the linear
-random-slope model; it changes what "bias" means for two of the
-three methods, from an artifact of the reporting code to a
+random-slope model. It changes what "bias" means for two of
+the three methods, from an artifact of the reporting code to a
 correctly computed near-zero quantity.
 
 Our central thesis is that the summary measures approach
@@ -926,32 +944,32 @@ beginning with @matthewsAnalysisSerialMeasurements1990 and
 formalized by @frisonRepeatedMeasuresClinical1992 and
 @frisonLinearlyDivergentTreatment1997, establishes that
 summary statistics with ANCOVA baseline adjustment can achieve
-near-optimal efficiency for detecting linear treatment effects.
-The simulation work of @vossoughiSummaryMeasureAnalysis2012
-provides strong empirical support: the summary measure approach
-is robust to covariance misspecification, whereas LMM can
-produce unreliable results when the working covariance
-structure is wrong.
+near-optimal efficiency for detecting linear treatment
+effects. The simulation work of
+@vossoughiSummaryMeasureAnalysis2012 provides strong empirical
+support. The summary measure approach is robust to covariance
+misspecification, whereas LMM can produce unreliable results
+when the working covariance structure is wrong.
 
 The practical advantages of summary statistics are not merely
-aesthetic. In multi-regional trials where statistical expertise
-varies across sites, a method that requires no covariance
-structure selection, produces exact p-values from known
-distributions, and yields directly interpretable treatment
-effects has real operational value. The
+aesthetic. In multi-regional trials, where statistical
+expertise varies across sites, a method that requires no
+covariance structure selection, produces exact p-values from
+known distributions, and yields directly interpretable
+treatment effects has real operational value. The
 degrees-of-freedom controversy surrounding
-@kenwardSmallSampleInference1997 approximations is not a
-theoretical curiosity: different software implementations
+@kenwardSmallSampleInference1997 approximations is not merely
+a theoretical curiosity. Different software implementations
 produce different p-values, creating regulatory risk when
 results from SAS and R disagree.
 
 @sennRepeatedMeasuresClinical2000 made the important
-observation that summary measures preserve
-intention-to-treat principles more naturally than some
-repeated measures approaches. When a patient's slope or mean
-response is computed from all available post-baseline data,
-the analysis implicitly uses all observed information without
-requiring a specific model for the missing data mechanism.
+observation that summary measures preserve intention-to-treat
+principles more naturally than some repeated measures
+approaches. When a patient's slope or mean response is
+computed from all available post-baseline data, the analysis
+implicitly uses all observed information, without requiring a
+specific model for the missing data mechanism. We note that
 @dawsonStratificationSummaryStatistic1994 showed that
 stratifying by missing data pattern further improves
 robustness.
@@ -959,81 +977,82 @@ robustness.
 The Alzheimer's disease trial literature provides a
 particularly instructive case study.
 @ardMixedModelRepeated2011 and @ardSimulationStudyComparing2015
-showed that slope models have a power advantage over MMRM when
-disease progression is approximately linear, which is the
-prevailing assumption for disease-modifying therapies. The
+showed that slope models have a power advantage over MMRM
+when disease progression is approximately linear, which is
+the prevailing assumption for disease-modifying therapies. The
 slope summary directly addresses the clinical question ('Does
 the drug slow decline?') in a way that the MMRM treatment
 effect at a single visit does not.
 
 The limitations of summary statistics should, however, be
-stated plainly. When treatment effects are non-monotone
-(e.g., an initial benefit that wanes), no single summary
-captures the full trajectory, and MMRM's flexibility in
-modeling visit-specific effects is genuinely advantageous.
-Under substantial MNAR dropout (say $>$20\%), the summary
-statistic approach may inherit bias because per-subject
-summaries computed from truncated trajectories
+stated plainly. When treatment effects are non-monotone (for
+example, an initial benefit that wanes), no single summary
+captures the full trajectory. In that setting, MMRM's
+flexibility in modeling visit-specific effects is genuinely
+advantageous. Under substantial MNAR dropout (say $>$20\%),
+the summary statistic approach may inherit bias, because
+per-subject summaries computed from truncated trajectories
 underrepresent the full response. And when the scientific
 question genuinely concerns the treatment effect at a
-specific landmark visit rather than the overall trajectory
-(a common design choice in disease-modification trials,
+specific landmark visit rather than the overall trajectory (a
+common design choice in disease-modification trials,
 including Alzheimer's disease trials with a primary endpoint
 at a fixed late visit), MMRM's ability to estimate
-visit-specific contrasts is essential; no general FDA mandate
-fixes that visit at a particular week, and the choice of
-landmark is a protocol-specific design decision.
+visit-specific contrasts is essential. We note that no
+general FDA mandate fixes that visit at a particular week; the
+choice of landmark is a protocol-specific design decision.
 
-@liuMixedModelsCovariateInteractions2021 highlighted
-another subtlety: MMRM achieves power gains over
-complete-case ANCOVA only when time-by-covariate interactions
-are included. Without these, MMRM may be no better than the
-simpler method it purports to replace. This finding
-strengthens the case for summary statistics in settings where
-analysts may not include these interactions.
+@liuMixedModelsCovariateInteractions2021 highlighted another
+subtlety. MMRM achieves power gains over complete-case ANCOVA
+only when time-by-covariate interactions are included. Without
+these, MMRM may be no better than the simpler method it
+purports to replace. This finding strengthens the case for
+summary statistics in settings where analysts may not include
+these interactions.
 
-The estimands framework introduced by @ichE9R12019 provides
-a useful lens. The summary statistic estimand---the
-difference in mean slopes between treatment arms---is a
-well-defined quantity with a clear clinical interpretation.
-The MMRM estimand at a specific visit is conditional on the
+The estimands framework introduced by @ichE9R12019 provides a
+useful lens. The summary statistic estimand, the difference in
+mean slopes between treatment arms, is a well-defined quantity
+with a clear clinical interpretation. The MMRM estimand at a
+specific visit, on the other hand, is conditional on the
 covariance model and may not correspond to any quantity that
 clinicians find intuitive.
 
 # Future research
 
-Several directions merit further investigation:
+Several directions, in our view, merit further investigation.
 
 1. **Nonlinear summary statistics.** The present review
-   focuses on linear summaries (slopes, means, change
-   scores). Nonlinear summaries such as time to a clinically
-   meaningful threshold or the area under the
-   response-time curve (AUC) may capture treatment effects
-   that linear summaries miss. Efficiency comparisons under
-   realistic data-generating models would be valuable.
+   focuses on linear summaries (slopes, means, change scores).
+   Nonlinear summaries, such as time to a clinically
+   meaningful threshold or the area under the response-time
+   curve (AUC), may capture treatment effects that linear
+   summaries miss. Efficiency comparisons under realistic
+   data-generating models would be valuable.
 
 2. **Robust variance estimation.** Combining summary
    statistics with sandwich (HC) standard errors could
    provide robustness to heteroscedasticity without requiring
    mixed-model machinery. The properties of such estimators
-   in the summary statistic context are unexplored.
+   in the summary statistic context remain unexplored.
 
 3. **Multiple imputation with summary statistics.** When
    missing data rates are substantial, computing summary
-   statistics within each multiply imputed dataset and pooling
-   via Rubin's rules could extend the approach to settings
-   where simple complete-case analysis is inadequate.
+   statistics within each multiply imputed dataset and
+   pooling via Rubin's rules could extend the approach to
+   settings where simple complete-case analysis is
+   inadequate.
 
 4. **Software tools.** A dedicated R package implementing the
    summary measures approach with ANCOVA, baseline adjustment,
    sample size formulas, and diagnostic plots would lower the
    barrier to adoption.
 
-5. **Head-to-head regulatory submissions.** Empirical evidence
-   from regulatory submissions where both MMRM and summary
-   statistics were presented as co-primary or sensitivity
-   analyses would illuminate the practical concordance of the
-   two approaches.
+5. **Head-to-head regulatory submissions.** Empirical
+   evidence from regulatory submissions, where both MMRM and
+   summary statistics were presented as co-primary or
+   sensitivity analyses, would illuminate the practical
+   concordance of the two approaches.
 
 6. **Bayesian summary statistics.** Integrating the summary
    measures approach with Bayesian sample size determination
@@ -1041,51 +1060,53 @@ Several directions merit further investigation:
    could provide a unified framework for design and analysis.
 
 7. **Extension to non-Gaussian endpoints.** The summary
-   measures framework is well-developed for continuous outcomes.
-   Extension to binary or count outcomes (e.g., proportion of
-   visits with response, total adverse events) remains
-   underexplored.
+   measures framework is well developed for continuous
+   outcomes. Extension to binary or count outcomes (for
+   example, proportion of visits with response, total adverse
+   events) remains underexplored.
 
 # Appendix: Morris et al. (2019) ADEMP compliance audit
 
-This audit was previously nested under the References heading,
-where it rendered between the References title and the citeproc
-bibliography (whitepaper M7); it is relocated here as an
-appendix and re-run against the corrected simulation described
-in this manuscript rather than reproducing the pre-remediation
-"Compliant" verdict, which was false: at the time it was
-written, every MMRM fit had silently failed (M1) and two of
-three methods were scored against the wrong estimand (M2), so
-the study did not meet Morris et al.'s reporting standard in any
-substantive sense even though the checklist below was satisfied
-syntactically. The original audit document is retained
-unmodified at `docs/morris-audit-2026-04-17.md` for the
-historical record; the verdict below supersedes it.
+This audit was previously nested under the References
+heading, where it rendered between the References title and
+the citeproc bibliography (whitepaper M7). It is relocated
+here as an appendix and re-run against the corrected
+simulation described in this manuscript, rather than
+reproducing the pre-remediation "Compliant" verdict, which was
+false. At the time it was written, every MMRM fit had
+silently failed (M1) and two of three methods were scored
+against the wrong estimand (M2), so the study did not meet
+Morris et al.'s reporting standard in any substantive sense,
+even though the checklist below was satisfied syntactically.
+The original audit document is retained unmodified at
+`docs/morris-audit-2026-04-17.md` for the historical record;
+the verdict below supersedes it.
 
-**Verdict as of this remediation pass (2026-08-20, second pass):
-compliant.** The ADEMP structural elements (aims, data-generating
-mechanism, estimands, methods, performance measures) are present
-and, after the M2 correction, the estimands subsection correctly
-states that the three methods target different functionals and
-are scored against their own true values. The ADEMP-recommended
-null (`\(\delta = 0\)`) condition is now included (M4), MMRM
-converges in every reported cell rather than failing wholesale
-(M1), and every reported performance measure carries a Morris
-Table 6 Monte Carlo SE. The currently committed `sim_09.rds` (and
-therefore every inline number, table, and figure in this
-document) is the production-scale run, `n_reps = 1000` across the
-full 60-condition design grid, so the reported Monte Carlo SEs
-(about 0.7 percentage points for coverage, about 1.4-1.6
-percentage points for power in the least favorable cells) are
-informative at the precision Morris et al.'s reporting standard
-presumes. This production run also surfaced a second coding
-defect not visible in the pilot: `fit_mmrm()` read the t
-statistic rather than the p-value from `mmrm`'s coefficient
+**Verdict as of this remediation pass (2026-08-20, second
+pass): compliant.** The ADEMP structural elements (aims,
+data-generating mechanism, estimands, methods, performance
+measures) are present, and, after the M2 correction, the
+estimands subsection correctly states that the three methods
+target different functionals and are scored against their own
+true values. The ADEMP-recommended null (`\(\delta = 0\)`)
+condition is now included (M4). MMRM converges in every
+reported cell rather than failing wholesale (M1), and every
+reported performance measure carries a Morris Table 6 Monte
+Carlo SE. The currently committed `sim_09.rds`, and therefore
+every inline number, table, and figure in this document, is
+the production-scale run, `n_reps = 1000` across the full
+60-condition design grid. The reported Monte Carlo SEs (about
+0.7 percentage points for coverage, about 1.4-1.6 percentage
+points for power in the least favorable cells) are therefore
+informative at the precision Morris et al.'s reporting
+standard presumes. This production run also surfaced a second
+coding defect not visible in the pilot. `fit_mmrm()` read the
+t statistic rather than the p-value from `mmrm`'s coefficient
 table (column 4 instead of column 5), which produced an MMRM
-Type I error near 0.50 in an initial production-scale attempt.
-The fix is regression-tested (`inst/tinytest/test_basic.R`) and
-the run redone; see the `run-sim` chunk in the Methods for
-detail.
+Type I error near 0.50 in an initial production-scale
+attempt. The fix is regression-tested
+(`inst/tinytest/test_basic.R`) and the run redone; see the
+`run-sim` chunk in the Methods for detail.
 
 **Audit-time gaps and their resolution:**
 
@@ -1126,10 +1147,10 @@ detail.
   `t value` (column 4); regression-tested in
   `inst/tinytest/test_basic.R`.
 
-Pilot runs use `N_REPS=100` (or the smaller ad hoc pilot used to
-verify this remediation) for fast smoke-test rendering;
-production submission requires `N_REPS=1000` (the default) over
-the full design grid, as used to generate the results reported
-in this document.
+Pilot runs use `N_REPS=100` (or the smaller ad hoc pilot used
+to verify this remediation) for fast smoke-test rendering.
+Production submission requires `N_REPS=1000` (the default)
+over the full design grid, as used to generate the results
+reported in this document.
 
 # References
