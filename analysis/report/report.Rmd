@@ -58,25 +58,26 @@ opts_chunk$set(
 \begin{abstract}
 Mixed-model repeated measures (MMRM) is the default primary
 analysis for longitudinal continuous endpoints in clinical
-trials, but the two-stage summary-measures approach (per-subject
-slope or change score, followed by ANCOVA) remains attractive
-where covariance misspecification, degrees-of-freedom
-controversy, and interpretability are practical concerns. We
-synthesize three decades of summary-measures literature and
-report a Monte Carlo simulation, under a random-intercept-and-
-slope generating model, comparing slope-summary ANCOVA,
-change-score ANCOVA, and MMRM on bias, coverage, power, and
-Type I error, each scored against its own estimand and each
-reported with Morris-Table-6 Monte Carlo standard errors. We
-argue that the most defensible framing for summary statistics is
-not a claim of general superiority over MMRM, which the
-literature (Frison and Pocock; Vossoughi; Ard) has already
-established for the linear-divergence setting the current
-simulation covers, but a decision-support case grounded in the
-ICH E9(R1) estimands framework: the summary-statistic slope
-estimand is covariance-model-free and directly interpretable,
-while the MMRM visit-specific estimand is conditional on the
-working covariance model.
+trials. However, the two-stage summary-measures approach, that
+is, a per-subject slope or change score followed by ANCOVA,
+remains attractive where covariance misspecification,
+degrees-of-freedom controversy, and interpretability are
+practical concerns. We synthesize three decades of
+summary-measures literature and report a Monte Carlo
+simulation, under a random-intercept-and-slope generating
+model, comparing slope-summary ANCOVA, change-score ANCOVA,
+and MMRM on bias, coverage, power, and Type I error. Each
+method is scored against its own estimand and reported with
+Morris-Table-6 Monte Carlo standard errors. We argue that the
+most defensible framing for summary statistics is not a claim
+of general superiority over MMRM. The literature (Frison and
+Pocock; Vossoughi; Ard) has already established that point for
+the linear-divergence setting the current simulation covers.
+Instead, we frame summary statistics as a decision-support case
+grounded in the ICH E9(R1) estimands framework: the
+summary-statistic slope estimand is covariance-model-free and
+directly interpretable, while the MMRM visit-specific estimand
+is conditional on the working covariance model.
 \end{abstract}
 
 \noindent\textbf{Keywords:} summary measures; ANCOVA; MMRM;
