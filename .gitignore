@@ -18,3 +18,24 @@ renv/staging/
 # file, so a stray package there breaks any environment that does
 # not have it (this broke Render Reports CI in a sibling repo).
 analysis/report/cache/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.idx
+*.ilg
+*.ind
+*.lof
+*.log
+*.lot
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+*.vrb
