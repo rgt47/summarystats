@@ -1,0 +1,3 @@
+# Render configuration read by .github/workflows/render-report.yml.
+# Renders on main take 1.5 to 3 hours, beyond the 120-minute default.
+timeout: 240
