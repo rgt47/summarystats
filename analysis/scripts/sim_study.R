@@ -3,7 +3,8 @@ generate_data <- function(n_per_arm, p_visits, miss_rate,
                          beta0 = 50, beta1 = -0.5,
                          delta = 0.25,
                          sigma_b0 = 5, sigma_b1 = 0.3,
-                         rho_01 = -0.3, sigma_e = 3) {
+                         rho_01 = -0.3, sigma_e = 3,
+                         mar_slope = 0.04) {
   n_total <- 2 * n_per_arm
   trt <- rep(c(0, 1), each = n_per_arm)
   times <- seq(0, p_visits, by = 1)
@@ -30,21 +31,20 @@ generate_data <- function(n_per_arm, p_visits, miss_rate,
     dat$y[post_bl[drop == 1]] <- NA
   }
 
-  # MAR dropout is calibrated so that the marginal probability of
-  # dropping out by the final visit is approximately `miss_rate`. The
-  # constant per-visit hazard consistent with that marginal rate under
-  # independent hazards would be `h_base` solved from
-  # `1 - (1 - h_base)^p_visits = miss_rate`, but the informative
-  # perturbation below (subjects with worse-than-average observed
-  # outcomes are more likely to drop) is asymmetric under the logistic
-  # link and systematically pulls the achieved marginal rate below
-  # `h_base`'s nominal target. A multiplicative correction
-  # (`mar_hazard_scale = 2`) was calibrated empirically (Monte Carlo
-  # check over n_per_arm in {30, 50, 100}, p_visits in {4, 8},
-  # miss_rate in {0.10, 0.20}, 60 replicates per cell) to bring the
-  # achieved marginal rate within about 2-3 percentage points of the
-  # nominal `miss_rate` (whitepaper m3); it is not an exact analytic
-  # calibration and is disclosed as such in the manuscript Methods.
+  # MAR dropout: monotone, with a per-visit logistic hazard that
+  # depends on the previous observed response. `h_base` solves
+  # `1 - (1 - h_base)^p_visits = miss_rate` and is then multiplied on
+  # the odds scale by `mar_hazard_scale = 2`. CAUTION (referee report
+  # 2026-11-17, Major 4): the scale factor does NOT calibrate
+  # dropout-by-final-visit to `miss_rate`. Replaying the production
+  # datasets shows final-visit missingness of about 2 x `miss_rate`;
+  # only the fraction of post-baseline observations missing lands near
+  # `miss_rate`. Achieved rates are tabulated by
+  # `analysis/scripts/sim_09_supplement.R`. The default is left
+  # unchanged so that `sim_09.rds` remains reproducible.
+  # `mar_slope` is the dropout-logit coefficient per unit of response;
+  # the production default 0.04 is weakly informative (between-subject
+  # SD of the response is about 5).
   if (miss_rate > 0 && miss_mech == "MAR") {
     mar_hazard_scale <- 2
     h_base <- 1 - (1 - miss_rate)^(1 / p_visits)
@@ -57,7 +57,7 @@ generate_data <- function(n_per_arm, p_visits, miss_rate,
           next
         }
         prev_y <- dat$y[rows_i[j - 1]]
-        p_drop <- plogis(intercept + 0.04 * (beta0 - prev_y))
+        p_drop <- plogis(intercept + mar_slope * (beta0 - prev_y))
         p_drop <- min(p_drop, 1)
         if (runif(1) < p_drop) {
           dat$y[rows_i[j:length(rows_i)]] <- NA
@@ -104,6 +104,74 @@ fit_sma_slope <- function(dat) {
       s[trt_row, 2],
     ci_upper = s[trt_row, 1] + qt(0.975, fit$df.residual) *
       s[trt_row, 2],
+    converged = TRUE
+  )
+}
+
+#' Inverse-variance-weighted slope summary with ANCOVA
+#'
+#' Supplementary method added in response to the referee report of
+#' 2026-11-17 (Major 3). Under monotone dropout many subjects
+#' contribute only two or three post-baseline visits, so their OLS
+#' slopes are far noisier than full-trajectory slopes; the unweighted
+#' second-stage ANCOVA in `fit_sma_slope()` gives them equal weight.
+#' Here each slope is weighted by `1 / (s2_b1 + s2_e / Sxx_i)`, where
+#' `s2_e` is the residual variance pooled over all within-subject fits
+#' (a two-visit subject has no residual degrees of freedom of its
+#' own), `Sxx_i` is the subject's sum of squared centered visit times,
+#' and `s2_b1` is a method-of-moments estimate of the between-subject
+#' slope variance, truncated at zero.
+#'
+#' @param dat Long data from `generate_data()`.
+#' @return List with `est`, `se`, `pval`, `ci_lower`, `ci_upper`,
+#'   `converged`.
+fit_sma_slope_wls <- function(dat) {
+  na_out <- list(
+    est = NA, se = NA, pval = NA,
+    ci_lower = NA, ci_upper = NA, converged = TRUE
+  )
+  bl <- dat |>
+    dplyr::filter(time == 0) |>
+    dplyr::select(id, baseline_y = y)
+
+  per <- dat |>
+    dplyr::filter(time > 0, !is.na(y)) |>
+    dplyr::group_by(id) |>
+    dplyr::filter(dplyr::n() >= 2) |>
+    dplyr::summarise(
+      trt = dplyr::first(trt),
+      sxx = sum((time - mean(time))^2),
+      slope = sum((time - mean(time)) * (y - mean(y))) / sxx,
+      rss = sum((y - mean(y) - slope * (time - mean(time)))^2),
+      df_e = dplyr::n() - 2,
+      .groups = "drop"
+    )
+
+  ana <- dplyr::inner_join(per, bl, by = "id")
+  if (nrow(ana) < 6 || sum(ana$df_e) < 1) {
+    return(na_out)
+  }
+
+  s2_e <- sum(ana$rss) / sum(ana$df_e)
+  ols <- lm(slope ~ trt + baseline_y, data = ana)
+  s2_b1 <- max(
+    sum(stats::resid(ols)^2) / ols$df.residual -
+      mean(s2_e / ana$sxx),
+    0
+  )
+  ana$w <- 1 / (s2_b1 + s2_e / ana$sxx)
+
+  fit <- lm(slope ~ trt + baseline_y, data = ana, weights = w)
+  s <- summary(fit)$coefficients
+  trt_row <- which(rownames(s) == "trt")
+  q <- qt(0.975, fit$df.residual)
+
+  list(
+    est = s[trt_row, 1],
+    se = s[trt_row, 2],
+    pval = s[trt_row, 4],
+    ci_lower = s[trt_row, 1] - q * s[trt_row, 2],
+    ci_upper = s[trt_row, 1] + q * s[trt_row, 2],
     converged = TRUE
   )
 }
@@ -195,7 +263,10 @@ fit_sma_change_ttest <- function(dat) {
 # `mmrm::us(visit | id)`; the namespace-qualified form is not
 # recognized by mmrm's formula parser and silently fails on every
 # call (whitepaper M1).
-fit_mmrm <- function(dat) {
+# `df_method` defaults to the Satterthwaite setting used for
+# `sim_09.rds`; "Kenward-Roger" is used by the supplementary runs
+# (referee report 2026-11-17, Major 2).
+fit_mmrm <- function(dat, df_method = "Satterthwaite") {
   ana <- dat |>
     dplyr::filter(time > 0, !is.na(y)) |>
     dplyr::mutate(
@@ -221,7 +292,7 @@ fit_mmrm <- function(dat) {
     fit <- mmrm::mmrm(
       y ~ trt * time + baseline_y + us(visit | id),
       data = ana,
-      method = "Satterthwaite"
+      method = df_method
     )
 
     s <- summary(fit)$coefficients
@@ -256,6 +327,85 @@ fit_mmrm <- function(dat) {
   })
 }
 
+#' Categorical-visit MMRM with a final-visit contrast
+#'
+#' The conventional MMRM that the manuscript's Introduction discusses
+#' (referee report 2026-11-17, Major 5): `trt * visit` and
+#' `baseline_y * visit` fixed effects, unstructured covariance over
+#' visits. The visit factor is releveled so that the final visit is
+#' the reference level; the `trt` coefficient is then the treatment
+#' difference at the final visit, whose true value is
+#' `delta * p_visits`.
+#'
+#' @param dat Long data from `generate_data()`.
+#' @param df_method Degrees-of-freedom method passed to `mmrm::mmrm()`.
+#' @return List with `est`, `se`, `pval`, `ci_lower`, `ci_upper`,
+#'   `converged`.
+fit_mmrm_visit <- function(dat, df_method = "Kenward-Roger") {
+  na_out <- list(
+    est = NA, se = NA, pval = NA,
+    ci_lower = NA, ci_upper = NA, converged = FALSE
+  )
+  p_last <- max(dat$time)
+  lev <- c(p_last, seq_len(p_last - 1))
+  ana <- dat |>
+    dplyr::filter(time > 0, !is.na(y)) |>
+    dplyr::mutate(
+      visit = factor(time, levels = lev),
+      id = factor(id)
+    )
+  bl <- dat |>
+    dplyr::filter(time == 0) |>
+    dplyr::select(id, baseline_y = y) |>
+    dplyr::mutate(id = factor(id))
+  ana <- dplyr::inner_join(ana, bl, by = "id")
+
+  if (nrow(ana) < 10 || !any(ana$time == p_last)) {
+    return(na_out)
+  }
+
+  tryCatch({
+    fit <- mmrm::mmrm(
+      y ~ trt * visit + baseline_y * visit + us(visit | id),
+      data = ana,
+      method = df_method
+    )
+    s <- summary(fit)$coefficients
+    idx <- which(rownames(s) == "trt")
+    if (length(idx) == 0) {
+      return(na_out)
+    }
+    est_val <- s[idx, 1]
+    se_val <- s[idx, 2]
+    q <- qt(0.975, s[idx, 3])
+    list(
+      est = est_val,
+      se = se_val,
+      pval = s[idx, 5],
+      ci_lower = est_val - q * se_val,
+      ci_upper = est_val + q * se_val,
+      converged = TRUE
+    )
+  }, error = function(e) na_out)
+}
+
+#' Achieved missingness in one simulated data set
+#'
+#' @param dat Long data from `generate_data()`.
+#' @return Named numeric vector: fraction of post-baseline
+#'   observations missing, fraction missing at the final visit, and
+#'   fraction of subjects with fewer than two post-baseline
+#'   observations (who are dropped by the slope summaries).
+missingness_summary <- function(dat) {
+  post <- dat[dat$time > 0, ]
+  n_obs <- tapply(!is.na(post$y), post$id, sum)
+  c(
+    obs_missing = mean(is.na(post$y)),
+    final_missing = mean(is.na(post$y[post$time == max(post$time)])),
+    subj_lt2 = mean(n_obs < 2)
+  )
+}
+
 # Per-method true value of the estimated treatment-effect coefficient
 # under the generating model (whitepaper M2). SMA-slope and MMRM
 # (fit with continuous time, see `fit_mmrm()`) both target the
@@ -268,6 +418,9 @@ truth_for_method <- function(method, delta, p_visits) {
     method == "SMA-slope" ~ delta,
     method == "SMA-change" ~ delta * (p_visits + 1) / 2,
     method == "MMRM" ~ delta,
+    method == "SMA-slope-W" ~ delta,
+    method == "MMRM-KR" ~ delta,
+    method == "MMRM-visit" ~ delta * p_visits,
     TRUE ~ NA_real_
   )
 }
@@ -320,43 +473,12 @@ run_one_rep <- function(n_per_arm, p_visits, miss_rate,
   out
 }
 
-run_simulation <- function(n_per_arm, p_visits, miss_rate,
-                           miss_mech, n_reps = 1000,
-                           delta = 0.25, rng_dir = NULL, ...) {
-  # Morris et al. (2019) §4.1: the RNG seed is set ONCE by the caller;
-  # this function does not call set.seed(). Per-replicate RNG states
-  # are captured. If `rng_dir` is supplied, the full list of states is
-  # written to a sidecar RDS in that directory and the sidecar path is
-  # returned as a column on every output row (surviving
-  # `purrr::pmap_dfr` row-binding, unlike an attribute, which
-  # `pmap_dfr` drops; whitepaper m4). If `rng_dir` is NULL, the states
-  # are attached only as an attribute of the returned object, which is
-  # sufficient for interactive use but not for the multi-condition
-  # `pmap_dfr` loop in `report.Rmd`.
-  rng_states <- vector("list", n_reps)
-
-  reps <- purrr::map_dfr(
-    seq_len(n_reps),
-    function(i) {
-      rng_states[[i]] <<- .Random.seed
-      run_one_rep(
-        n_per_arm = n_per_arm,
-        p_visits = p_visits,
-        miss_rate = miss_rate,
-        miss_mech = miss_mech,
-        delta = delta,
-        ...
-      )
-    },
-    .id = "rep"
-  )
-
-  # Monte Carlo SE formulas per Morris, White & Crowther (2019)
-  # Table 6. Degenerate cases (n_valid < 1 or < 2) yield NA_real_
-  # rather than NaN/Inf. Bias, MSE, and coverage are scored against
-  # each method's own `truth` (whitepaper M2), not a single shared
-  # `delta`.
-  out <- reps |>
+# Morris, White & Crowther (2019) Table 6 performance summary of a
+# replicate-level data frame (columns method, truth, est, se, pval,
+# ci_lower, ci_upper, converged). Factored out of `run_simulation()`
+# unchanged so that the supplementary script can reuse it.
+summarise_reps <- function(reps) {
+  reps |>
     dplyr::group_by(method, truth) |>
     dplyr::summarise(
       n_valid = sum(!is.na(est)),
@@ -403,7 +525,46 @@ run_simulation <- function(n_per_arm, p_visits, miss_rate,
       } else NA_real_,
       convergence = mean(converged, na.rm = TRUE),
       .groups = "drop"
-    ) |>
+    )
+}
+
+run_simulation <- function(n_per_arm, p_visits, miss_rate,
+                           miss_mech, n_reps = 1000,
+                           delta = 0.25, rng_dir = NULL, ...) {
+  # Morris et al. (2019) §4.1: the RNG seed is set ONCE by the caller;
+  # this function does not call set.seed(). Per-replicate RNG states
+  # are captured. If `rng_dir` is supplied, the full list of states is
+  # written to a sidecar RDS in that directory and the sidecar path is
+  # returned as a column on every output row (surviving
+  # `purrr::pmap_dfr` row-binding, unlike an attribute, which
+  # `pmap_dfr` drops; whitepaper m4). If `rng_dir` is NULL, the states
+  # are attached only as an attribute of the returned object, which is
+  # sufficient for interactive use but not for the multi-condition
+  # `pmap_dfr` loop in `report.Rmd`.
+  rng_states <- vector("list", n_reps)
+
+  reps <- purrr::map_dfr(
+    seq_len(n_reps),
+    function(i) {
+      rng_states[[i]] <<- .Random.seed
+      run_one_rep(
+        n_per_arm = n_per_arm,
+        p_visits = p_visits,
+        miss_rate = miss_rate,
+        miss_mech = miss_mech,
+        delta = delta,
+        ...
+      )
+    },
+    .id = "rep"
+  )
+
+  # Monte Carlo SE formulas per Morris, White & Crowther (2019)
+  # Table 6. Degenerate cases (n_valid < 1 or < 2) yield NA_real_
+  # rather than NaN/Inf. Bias, MSE, and coverage are scored against
+  # each method's own `truth` (whitepaper M2), not a single shared
+  # `delta`.
+  out <- summarise_reps(reps) |>
     dplyr::mutate(
       n_per_arm = n_per_arm,
       p_visits = p_visits,

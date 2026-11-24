@@ -8,3 +8,6 @@
 | `report-2026-08-20-1839-6cc6e3a-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `6cc6e3a-wip` | 2026-08-20 18:39 PDT |
 | `report-2026-08-20-2011-7b468d2-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `7b468d2-wip` | 2026-08-20 20:11 PDT |
 | `report-2026-08-20-2228-7fca2d3.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `7fca2d3` | 2026-08-20 22:28 PDT |
+| `report-2026-11-17-1821-49bb875-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `49bb875-wip` | 2026-11-17 18:21 PST |
+| `report-2026-11-17-1823-49bb875-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `49bb875-wip` | 2026-11-17 18:23 PST |
+| `report-2026-11-17-1829-49bb875-wip.pdf` | `~/prj/res/09-summary-stats-efficacy/summarystats/analysis/report/report.Rmd` | `49bb875-wip` | 2026-11-17 18:29 PST |

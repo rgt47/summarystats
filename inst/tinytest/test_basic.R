@@ -143,6 +143,53 @@ expect_true(
   )
 )
 
+## fit_sma_change_ttest() ------------------------------------------
+
+# Not called in the main grid; the manuscript describes it as a
+# sensitivity variant, so it needs its own estimand-recovery check.
+ttest_fit <- fit_sma_change_ttest(dat_large)
+chg <- dat_large |>
+  dplyr::filter(time > 0) |>
+  dplyr::group_by(id, trt) |>
+  dplyr::summarise(post_mean = mean(y), .groups = 'drop') |>
+  dplyr::inner_join(
+    dplyr::filter(dat_large, time == 0) |>
+      dplyr::select(id, baseline_y = y),
+    by = 'id'
+  ) |>
+  dplyr::mutate(change = post_mean - baseline_y)
+lm_unadj <- summary(lm(change ~ trt, data = chg))$coefficients
+expect_equal(
+  ttest_fit$est, unname(lm_unadj['trt', 1]),
+  tolerance = 1e-10,
+  info = paste(
+    'fit_sma_change_ttest() estimate equals the treated-minus-control',
+    'difference in mean change (sign convention check)'
+  )
+)
+expect_equal(
+  ttest_fit$se, unname(lm_unadj['trt', 2]),
+  tolerance = 1e-8,
+  info = 'pooled-variance t-test SE equals the unadjusted lm SE'
+)
+expect_equal(
+  ttest_fit$pval, unname(lm_unadj['trt', 4]),
+  tolerance = 1e-8,
+  info = 'pooled-variance t-test p-value equals the unadjusted lm p'
+)
+expect_true(
+  abs(ttest_fit$est - change_truth) < 0.2,
+  info = paste(
+    'fit_sma_change_ttest() recovers delta * (p_visits + 1) / 2',
+    'at n_per_arm = 400 (single large-sample check)'
+  )
+)
+one_arm <- dplyr::filter(dat_large, trt == 1)
+expect_true(
+  is.na(fit_sma_change_ttest(one_arm)$est),
+  info = 'fit_sma_change_ttest() returns NA when only one arm remains'
+)
+
 ## fit_mmrm() converges and targets the slope estimand ------------
 
 if (requireNamespace("mmrm", quietly = TRUE)) {
